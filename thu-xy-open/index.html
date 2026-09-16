@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THU-XY · 清华大学行健书院班级管理平台</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- 顶部校名条（仿清华官网风格） -->
+  <div class="top-bar">
+    <span class="top-bar-school">清华大学 · 行健书院</span>
+    <span class="top-bar-motto">行健不息 · 需自强</span>
+  </div>
+
+  <!-- 页头 -->
+  <header class="site-header">
+    <h1 id="site-name" class="site-name">THU-XY</h1>
+    <p class="site-subtitle">清华大学行健书院 · 班级管理平台</p>
+  </header>
+
+  <!-- 三个主板块（要增加板块：在 config.js 的 sections 中追加，并在此复制一个卡片） -->
+  <main class="home-main">
+    <div class="card-container">
+
+      <!-- 板块一：班级管理 -->
+      <div class="section-card" id="card-class">
+        <div class="card-title">班级管理</div>
+        <div class="dropdown">
+          <a href="class.html?id=xingjian63">行健63班</a>
+          <a href="class.html?id=xingjian-li6">行健-力6班</a>
+          <a href="#" class="disabled" title="该功能后续开放">创建自己的班级（敬请期待）</a>
+        </div>
+      </div>
+
+      <!-- 板块二：实践管理（暂未开放） -->
+      <div class="section-card card-disabled" id="card-practice">
+        <div class="card-title">实践管理</div>
+        <div class="card-coming-soon">敬请期待</div>
+      </div>
+
+      <!-- 板块三：个人管理（暂未开放） -->
+      <div class="section-card card-disabled" id="card-personal">
+        <div class="card-title">个人管理</div>
+        <div class="card-coming-soon">敬请期待</div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 行健书院班级管理平台 · 仅供班级内部使用</p>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script>
+    // 网站名称与副标题从配置文件读取
+    document.getElementById("site-name").textContent = SITE_CONFIG.siteName;
+    document.querySelector(".site-subtitle").textContent = SITE_CONFIG.siteSubtitle;
+    document.title = SITE_CONFIG.siteName + " · " + SITE_CONFIG.siteSubtitle;
+  </script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班级管理 · THU-XY</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- ========== 密码门禁层 ========== -->
+  <div id="password-gate" class="password-gate">
+    <div class="password-box">
+      <h2 id="gate-class-name">班级管理</h2>
+      <p class="gate-tip">请输入班级密码进入管理页面</p>
+      <input type="password" id="password-input" placeholder="请输入密码" autocomplete="off" />
+      <p id="password-error" class="password-error"></p>
+      <div class="gate-buttons">
+        <button id="password-submit" class="btn btn-primary">进入</button>
+        <a href="index.html" class="btn btn-ghost">返回首页</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 班级管理主内容（验证通过后显示） ========== -->
+  <div id="class-content" class="class-content" style="display: none;">
+
+    <div class="top-bar">
+      <span class="top-bar-school">清华大学 · 行健书院</span>
+      <a href="index.html" class="top-bar-back">← 返回首页</a>
+    </div>
+
+    <header class="class-header">
+      <h1 id="class-name">班级管理</h1>
+
+      <!-- 职务筛选：不选择 = 显示全部；选择后 = 只显示自己负责（主要/次要）的活动 -->
+      <div class="filter-bar">
+        <label for="position-filter">我的职务：</label>
+        <select id="position-filter">
+          <option value="">（全部工作安排）</option>
+          <!-- 职务选项由 JS 根据 config.js 生成 -->
+        </select>
+        <input type="text" id="name-filter" placeholder="我的姓名（配合职务筛选）" />
+        <button id="filter-clear" class="btn btn-ghost btn-small">清除筛选</button>
+        <button id="change-password" class="btn btn-ghost btn-small" style="margin-left: auto;">修改密码</button>
+      </div>
+    </header>
+
+    <main class="class-main">
+
+      <!-- 第一部分：近期工作安排（列表） -->
+      <section class="block">
+        <h2 class="block-title">近期工作安排</h2>
+        <div class="table-wrapper">
+          <table class="activity-table" id="recent-table">
+            <thead>
+              <tr>
+                <th>周次</th>
+                <th>活动标题</th>
+                <th>时间</th>
+                <th>地点</th>
+                <th>主要要求</th>
+                <th>主要负责人</th>
+                <th>次要负责人</th>
+                <th>备注</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody><!-- JS 渲染 --></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 第二部分：本学期工作安排（时间轴 / 时间表 / 列表 三视图，数据同源） -->
+      <section class="block">
+        <div class="block-header">
+          <h2 class="block-title">本学期工作安排</h2>
+          <div class="view-switch">
+            <button class="view-btn active" data-view="timeline">时间轴</button>
+            <button class="view-btn" data-view="schedule">时间表</button>
+            <button class="view-btn" data-view="list">列表</button>
+          </div>
+        </div>
+
+        <!-- 时间轴视图 -->
+        <div class="timeline" id="view-timeline">
+          <!-- JS 渲染 -->
+        </div>
+
+        <!-- 时间表视图（甘特式，可体现跨周活动） -->
+        <div class="table-wrapper" id="view-schedule" style="display: none;">
+          <table class="schedule-table" id="schedule-table">
+            <thead><!-- JS 渲染 --></thead>
+            <tbody><!-- JS 渲染 --></tbody>
+          </table>
+        </div>
+
+        <!-- 列表视图（可增删改） -->
+        <div id="view-list" style="display: none;">
+          <div class="table-wrapper">
+            <table class="activity-table" id="semester-table">
+              <thead>
+                <tr>
+                  <th>周次</th>
+                  <th>活动标题</th>
+                  <th>时间</th>
+                  <th>地点</th>
+                  <th>主要要求</th>
+                  <th>主要负责人</th>
+                  <th>次要负责人</th>
+                  <th>备注</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody><!-- JS 渲染 --></tbody>
+            </table>
+          </div>
+        </div>
+
+        <button id="add-activity" class="btn btn-primary add-btn">＋ 添加活动</button>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <p>THU-XY · 数据保存在本浏览器中 · 修改即时生效</p>
+    </footer>
+  </div>
+
+  <!-- ========== 活动编辑弹窗（新增/修改共用） ========== -->
+  <div id="edit-modal" class="modal" style="display: none;">
+    <div class="modal-box">
+      <h3 id="modal-title">编辑活动</h3>
+      <div class="form-grid">
+        <label>周次（可多选）</label>
+        <div>
+          <div id="f-weeks" class="week-chips"></div>
+          <div class="week-chips-helper">
+            <button type="button" id="weeks-clear" class="link-btn">清空</button>
+            <span class="helper-tip">点击数字选择，可跨周多选；悬停可查看日期</span>
+          </div>
+        </div>
+
+        <label>活动标题</label>
+        <input type="text" id="f-title" />
+
+        <label>时间</label>
+        <input type="text" id="f-time" placeholder="如：周六 14:00-16:00" />
+
+        <label>地点</label>
+        <input type="text" id="f-location" />
+
+        <label>主要要求</label>
+        <input type="text" id="f-requirement" />
+
+        <label>主要负责人<span class="label-note">（限1位班委）</span></label>
+        <div id="f-main-owner" class="owner-list"></div>
+
+        <label>次要负责人</label>
+        <div id="f-sub-owners" class="owner-list"></div>
+
+        <label>备注</label>
+        <input type="text" id="f-remark" />
+      </div>
+      <div class="modal-buttons">
+        <button id="modal-save" class="btn btn-primary">保存</button>
+        <button id="modal-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 修改密码弹窗 ========== -->
+  <div id="password-modal" class="modal" style="display: none;">
+    <div class="modal-box" style="width: 400px;">
+      <h3>修改班级密码</h3>
+      <div class="form-grid" style="grid-template-columns: 100px 1fr;">
+        <label>当前密码</label>
+        <input type="password" id="old-password" placeholder="请输入当前密码" />
+
+        <label>新密码</label>
+        <input type="password" id="new-password" placeholder="请输入新密码" />
+
+        <label>确认新密码</label>
+        <input type="password" id="confirm-password" placeholder="请再次输入新密码" />
+      </div>
+      <p id="password-modal-error" class="password-error"></p>
+      <div class="modal-buttons">
+        <button id="password-modal-save" class="btn btn-primary">保存</button>
+        <button id="password-modal-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/class.js"></script>
+</body>
+</html>
