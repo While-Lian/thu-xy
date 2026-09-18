@@ -12,8 +12,8 @@
  * 3. 替换下方的 SUPABASE_URL 和 SUPABASE_KEY
  * ============================================================ */
 
-const SUPABASE_URL = "https://你的项目ID.supabase.co";
-const SUPABASE_KEY = "sb_publishable_你的密钥";
+const SUPABASE_URL = "https://ijymeutjgslzsfsjuqxh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_SkFEXomtT0UhDObaetnNIw_GHO2NZ6G";
 
 // 初始化 Supabase 客户端（使用 window.supabase 避免变量名冲突）
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
