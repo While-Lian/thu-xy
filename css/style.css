@@ -139,8 +139,8 @@ body {
   background: #fff;
   border: 1px solid var(--gray-border);
   border-radius: 0 0 8px 8px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  z-index: 20;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000; /* 大幅提高层级，确保在最上层 */
   overflow: hidden;
 }
 
@@ -580,7 +580,7 @@ body {
 
 .modal-buttons {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center; /* 居中显示 */
   gap: 12px;
   margin-top: 24px;
 }
@@ -770,34 +770,14 @@ body {
     text-align: left;
   }
 
-  /* 问题1修复：手机端下拉菜单改为静态布局，避免遮挡下方卡片 */
-  .section-card {
-    height: auto;
-    min-height: 120px;
-  }
-
-  .dropdown {
-    position: static;
-    display: block;
-    margin-top: 16px;
-    box-shadow: none;
-    border: 1px solid var(--gray-border);
-    border-radius: 8px;
-  }
-
-  #card-class:hover .dropdown {
-    display: block;
-  }
-
-  /* 手机端默认显示下拉菜单（因为无法悬停） */
-  .dropdown {
-    display: block;
-  }
-
-  /* 问题2修复：弹窗两侧留白 */
+  /* 手机端弹窗：限制最大宽度并居中 */
   .modal-box {
-    margin: 0 16px;
-    width: calc(100% - 32px);
-    max-width: calc(100vw - 32px);
+    max-width: 90vw;
+    margin: 0 auto;
+  }
+
+  /* 弹窗按钮居中 */
+  .modal-buttons {
+    justify-content: center;
   }
 }
