@@ -769,4 +769,35 @@ body {
   .form-grid label {
     text-align: left;
   }
+
+  /* 问题1修复：手机端下拉菜单改为静态布局，避免遮挡下方卡片 */
+  .section-card {
+    height: auto;
+    min-height: 120px;
+  }
+
+  .dropdown {
+    position: static;
+    display: block;
+    margin-top: 16px;
+    box-shadow: none;
+    border: 1px solid var(--gray-border);
+    border-radius: 8px;
+  }
+
+  #card-class:hover .dropdown {
+    display: block;
+  }
+
+  /* 手机端默认显示下拉菜单（因为无法悬停） */
+  .dropdown {
+    display: block;
+  }
+
+  /* 问题2修复：弹窗两侧留白 */
+  .modal-box {
+    margin: 0 16px;
+    width: calc(100% - 32px);
+    max-width: calc(100vw - 32px);
+  }
 }
