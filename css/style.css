@@ -770,6 +770,11 @@ body {
     text-align: left;
   }
 
+  /* 手机端：班级管理卡片展开时，下方卡片向下移动（由 JS 控制） */
+  #card-class {
+    position: relative;
+  }
+
   /* 手机端弹窗：限制最大宽度并居中 */
   .modal-box {
     max-width: 90vw;
@@ -779,5 +784,29 @@ body {
   /* 弹窗按钮居中 */
   .modal-buttons {
     justify-content: center;
+  }
+
+  /* 手机端填写栏留白：输入框不顶到右边缘 */
+  .form-grid input {
+    max-width: calc(100% - 8px);
+  }
+
+  /* 负责人行：职务下拉框缩短，姓名输入框不顶到边缘 */
+  .owner-row select {
+    width: 110px;
+    flex-shrink: 0;
+  }
+
+  .owner-row input {
+    flex: 1;
+    min-width: 0; /* 允许收缩 */
+    max-width: calc(100% - 8px);
+  }
+
+  /* 周次芯片：缩小尺寸适应手机 */
+  .week-chip {
+    width: 32px;
+    height: 28px;
+    font-size: 12px;
   }
 }

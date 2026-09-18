@@ -58,6 +58,62 @@
     document.getElementById("site-name").textContent = SITE_CONFIG.siteName;
     document.querySelector(".site-subtitle").textContent = SITE_CONFIG.siteSubtitle;
     document.title = SITE_CONFIG.siteName + " · " + SITE_CONFIG.siteSubtitle;
+
+    // 手机端：点击"班级管理"卡片切换下拉菜单
+    const cardClass = document.getElementById("card-class");
+    const dropdown = cardClass.querySelector(".dropdown");
+    let isDropdownOpen = false;
+
+    // 检测是否为小屏幕（手机端）
+    const isMobileView = () => window.innerWidth <= 640;
+
+    // 手机端：点击切换
+    cardClass.addEventListener("click", (e) => {
+      // 只在手机视口下启用点击切换
+      if (!isMobileView()) return;
+
+      // 如果点击的是下拉菜单内的链接，不阻止默认行为
+      if (e.target.closest('.dropdown a')) {
+        return;
+      }
+
+      e.preventDefault();
+      isDropdownOpen = !isDropdownOpen;
+
+      if (isDropdownOpen) {
+        dropdown.style.display = "block";
+        // 给下方卡片添加间距
+        const siblings = Array.from(cardClass.parentElement.children);
+        const currentIndex = siblings.indexOf(cardClass);
+        siblings.slice(currentIndex + 1).forEach(card => {
+          card.style.marginTop = "160px";
+          card.style.transition = "margin-top 0.2s";
+        });
+      } else {
+        dropdown.style.display = "none";
+        // 恢复下方卡片位置
+        const siblings = Array.from(cardClass.parentElement.children);
+        const currentIndex = siblings.indexOf(cardClass);
+        siblings.slice(currentIndex + 1).forEach(card => {
+          card.style.marginTop = "";
+        });
+      }
+    });
+
+    // 点击页面其他地方关闭下拉菜单
+    document.addEventListener("click", (e) => {
+      if (!isMobileView()) return;
+      
+      if (!cardClass.contains(e.target) && isDropdownOpen) {
+        dropdown.style.display = "none";
+        isDropdownOpen = false;
+        const siblings = Array.from(cardClass.parentElement.children);
+        const currentIndex = siblings.indexOf(cardClass);
+        siblings.slice(currentIndex + 1).forEach(card => {
+          card.style.marginTop = "";
+        });
+      }
+    });
   </script>
 </body>
 </html>
