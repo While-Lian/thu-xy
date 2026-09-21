@@ -189,31 +189,22 @@ body {
 
 /* ---------- 网站说明 ---------- */
 .site-notice {
-  max-width: 800px;
-  margin: 40px auto 20px;
-  padding: 20px 24px;
-  background: #fff9e6;
-  border: 1px solid #ffe4b3;
-  border-left: 4px solid #ffa500;
-  border-radius: 8px;
   text-align: center;
+  padding: 12px 20px;
+  margin: 20px auto 10px;
+  color: #999;
+  font-size: 12px;
 }
 
 .site-notice p {
-  margin: 8px 0;
-  color: #666;
-  font-size: 14px;
-  line-height: 1.6;
+  margin: 0;
+  line-height: 1.5;
 }
 
 @media (max-width: 640px) {
   .site-notice {
-    margin: 24px 16px 16px;
-    padding: 16px;
-  }
-
-  .site-notice p {
-    font-size: 13px;
+    padding: 10px 16px;
+    font-size: 11px;
   }
 }
 

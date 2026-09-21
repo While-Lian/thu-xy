@@ -107,8 +107,9 @@
         font-size: 20px;
       }
 
-      .pdf-viewer {
-        height: 600px;
+      /* 移动端隐藏 PDF 阅读器，只显示下载按钮 */
+      .pdf-viewer-container {
+        display: none;
       }
 
       .pdf-actions {
@@ -118,6 +119,18 @@
       .pdf-actions .btn {
         width: 100%;
         text-align: center;
+      }
+
+      /* 移动端提示（覆盖 HTML 中的 display: none） */
+      .mobile-pdf-tip {
+        display: block !important;
+        padding: 20px;
+        background: var(--thu-purple-light);
+        border-radius: 8px;
+        text-align: center;
+        color: var(--thu-purple);
+        font-size: 14px;
+        margin-top: 16px;
       }
     }
   </style>
@@ -152,6 +165,11 @@
           title="行健书院班委手册">
           <p>您的浏览器不支持 PDF 预览，请<a href="行健书院班委手册.pdf" download>点击下载</a>查看。</p>
         </iframe>
+      </div>
+
+      <!-- 移动端提示 -->
+      <div class="mobile-pdf-tip" style="display: none;">
+        📱 移动端暂不支持在线预览<br>请点击上方"下载 PDF"按钮查看手册
       </div>
 
       <p style="margin-top: 16px; color: var(--gray-text); font-size: 14px;">
