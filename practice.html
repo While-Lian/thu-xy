@@ -25,10 +25,49 @@
             overflow: hidden;
         }
 
+        /* 顶部导航条 */
+        .top-nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary-color);
+            color: #fff;
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .top-nav-back {
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+
+        .top-nav-back:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        /* 内容区域向下偏移，避免被顶部导航遮挡 */
+        #flowchart-container {
+            margin-top: 44px;
+            height: calc(100% - 44px);
+        }
+
+        #content-container {
+            margin-top: 44px;
+            height: calc(100% - 44px);
+        }
+
         /* ---------------- 电脑端（默认）样式 ---------------- */
         #flowchart-container {
             width: 40%;
-            height: 100%;
             padding: 30px;
             overflow-y: auto;
             background-color: #eef0f4;
@@ -155,7 +194,6 @@
         /* 右侧内容区域 */
         #content-container {
             width: 60%;
-            height: 100%;
             padding: 40px 60px;
             overflow-y: auto;
             background-color: #ffffff;
@@ -244,7 +282,7 @@
 
             #flowchart-container {
                 position: fixed;
-                top: 0;
+                top: 44px;
                 left: 0;
                 bottom: 0;
                 width: 100%;
@@ -270,7 +308,7 @@
 
             #content-container {
                 position: fixed;
-                top: 0;
+                top: 44px;
                 left: 0;
                 bottom: 0;
                 width: 100%;
@@ -292,6 +330,12 @@
     </style>
 </head>
 <body>
+
+    <!-- 顶部导航条 -->
+    <div class="top-nav-bar">
+      <span class="top-nav-title">清华大学 · 行健书院</span>
+      <a href="index.html" class="top-nav-back">← 返回首页</a>
+    </div>
 
     <!-- 左侧导航 -->
     <div id="flowchart-container">
