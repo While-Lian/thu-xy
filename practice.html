@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本科生实践全流程梳理</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --primary-color: #660874;
+            --hover-color: #8a159c;
+            --bg-color: #f4f5f7;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', "Microsoft YaHei", sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        /* ---------------- 电脑端（默认）样式 ---------------- */
+        #flowchart-container {
+            width: 40%;
+            height: 100%;
+            padding: 30px;
+            overflow-y: auto;
+            background-color: #eef0f4;
+            border-right: 1px solid #dcdfe6;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-container {
+            display: flex;
+            background-color: #e4e7ed;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 25px;
+            flex-shrink: 0;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            color: #666;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 6px;
+            transition: all 0.3s;
+            user-select: none;
+        }
+        .tab.active {
+            background-color: var(--card-bg);
+            color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .phase-box {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .phase-box::after {
+            content: '⬇';
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: #999;
+        }
+        .phase-box:last-child::after {
+            display: none;
+        }
+
+        .phase-title {
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .node-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .node {
+            background-color: #fdfdfd;
+            border: 1px solid #c0c4cc;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .node:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background-color: #f3e6f5;
+            transform: translateY(-2px);
+        }
+
+        .node.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 8px rgba(102, 8, 116, 0.3);
+        }
+
+        .acknowledgement {
+            margin-top: auto;
+            padding-top: 30px;
+            padding-bottom: 10px;
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        .acknowledgement strong {
+            color: #666;
+            font-weight: bold;
+        }
+
+        /* 右侧内容区域 */
+        #content-container {
+            width: 60%;
+            height: 100%;
+            padding: 40px 60px;
+            overflow-y: auto;
+            background-color: #ffffff;
+            scroll-behavior: smooth;
+        }
+
+        .detail-content h2 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+        .detail-content h3 {
+            color: #444;
+            margin-top: 25px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+        }
+        .detail-content ul, .detail-content ol {
+            line-height: 1.8;
+            font-size: 1.05rem;
+            color: #555;
+            padding-left: 20px;
+        }
+        .detail-content li { margin-bottom: 10px; }
+        .detail-content p {
+            line-height: 1.8;
+            font-size: 1.05rem;
+            color: #555;
+        }
+        .detail-content strong {
+            color: #222;
+            background-color: #fff3cd;
+            padding: 0 4px;
+        }
+        .detail-content del { color: #999; }
+        
+        .detail-content blockquote {
+            border-left: 4px solid var(--primary-color);
+            background: #f9f9f9;
+            padding: 10px 15px;
+            margin: 15px 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        .welcome-msg {
+            text-align: center;
+            color: #888;
+            margin-top: 20%;
+        }
+        .welcome-msg svg {
+            width: 100px;
+            height: 100px;
+            fill: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .mobile-back-btn {
+            display: none;
+            width: 100%;
+            max-width: 300px;
+            margin: 40px auto 20px auto;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(102, 8, 116, 0.3);
+            transition: background-color 0.3s;
+        }
+        .mobile-back-btn:active { background-color: var(--hover-color); }
+
+        /* ---------------- 手机端响应式 ---------------- */
+        @media screen and (max-width: 768px) {
+            body {
+                display: block;
+                position: relative;
+                height: auto;
+                overflow: visible;
+            }
+
+            #flowchart-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                padding: 20px 15px;
+                overflow-y: auto;
+                background-color: #eef0f4;
+                border-right: none;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+                display: flex;
+                flex-direction: column;
+            }
+
+            .tab-container { padding: 3px; margin-bottom: 15px; }
+            .tab { font-size: 0.9rem; padding: 8px; }
+
+            .phase-box { padding: 16px; margin-bottom: 22px; }
+            .node { font-size: 0.95rem; padding: 8px 14px; }
+
+            .acknowledgement {
+                padding-top: 20px;
+                padding-bottom: 30px;
+            }
+
+            #content-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                padding: 30px 20px;
+                overflow-y: auto;
+                background-color: #ffffff;
+                box-shadow: -5px 0 20px rgba(0,0,0,0.15);
+                z-index: 100;
+                transform: translateX(100%);
+                transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+            }
+
+            #content-container.slide-in { transform: translateX(0); }
+            .mobile-back-btn { display: block; }
+            .detail-content h2 { font-size: 1.5rem; margin-bottom: 15px; }
+            .detail-content h3 { font-size: 1.15rem; margin-top: 20px; }
+            .detail-content p, .detail-content ul, .detail-content ol { font-size: 1rem; line-height: 1.7; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 左侧导航 -->
+    <div id="flowchart-container">
+        <h1 style="text-align: center; color: #333; margin-top: 0; margin-bottom: 15px; font-size: 1.5rem;">实践全流程导图</h1>
+        
+        <div class="tab-container">
+            <div class="tab active" data-page="page1">招募与实践前</div>
+            <div class="tab" data-page="page2">实践中与实践后</div>
+        </div>
+
+        <div id="page1" class="page active">
+            <div class="phase-box">
+                <h2 class="phase-title">一、 招募环节</h2>
+                <div class="node-group">
+                    <div class="node" data-target="member">支队员选拔</div>
+                    <div class="node" data-target="counselor">辅导员招募</div>
+                    <div class="node" data-target="teacher">带队老师确定</div>
+                </div>
+            </div>
+            <div class="phase-box">
+                <h2 class="phase-title">二、 实践前：支队建设</h2>
+                <div class="node-group">
+                    <div class="node" data-target="team-role">支队分工</div>
+                    <div class="node" data-target="team-info">信息搜集</div>
+                    <div class="node" data-target="team-tool">项目管理工具</div>
+                    <div class="node" data-target="team-meeting">支队会议</div>
+                </div>
+            </div>
+            <div class="phase-box">
+                <h2 class="phase-title">三、 实践前：主题·外联·调研</h2>
+                <div class="node-group">
+                    <div class="node" data-target="outreach">前期外联</div>
+                    <div class="node" data-target="theme">确定调研主题</div>
+                    <div class="node" data-target="preresearch">预调研工作</div>
+                </div>
+            </div>
+            <div class="phase-box">
+                <h2 class="phase-title">四、 实践前：行程规划与预订</h2>
+                <div class="node-group">
+                    <div class="node" data-target="visa">签证办理</div>
+                    <div class="node" data-target="flight">预定机酒</div>
+                    <div class="node" data-target="transport">实践地交通</div>
+                    <div class="node" data-target="safety">安全预案</div>
+                    <div class="node" data-target="insurance">购买保险</div>
+                    <div class="node" data-target="manual">支队手册</div>
+                    <div class="node" data-target="others">其他准备</div>
+                </div>
+            </div>
+            <div class="phase-box">
+                <h2 class="phase-title">五、 实践前：行前审批与答辩</h2>
+                <div class="node-group">
+                    <div class="node" data-target="training">行前培训</div>
+                    <div class="node" data-target="approval">出境申请</div>
+                    <div class="node" data-target="defense">行前答辩</div>
+                    <div class="node" data-target="reimburse_notice">其他注意事项</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page2" class="page">
+            <div class="phase-box">
+                <h2 class="phase-title">六、 实践中</h2>
+                <div class="node-group">
+                    <div class="node" data-target="practice-safety">安全</div>
+                    <div class="node" data-target="practice-record">记录</div>
+                    <div class="node" data-target="practice-control">控场</div>
+                    <div class="node" data-target="practice-others">其他</div>
+                </div>
+            </div>
+            <div class="phase-box">
+                <h2 class="phase-title">七、 实践后</h2>
+                <div class="node-group">
+                    <div class="node" data-target="post-publicity">宣传</div>
+                    <div class="node" data-target="post-summary">总结与答辩</div>
+                    <div class="node" data-target="post-reimburse">报销</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="acknowledgement">
+            <p>本文部分文字内容参考了 <strong>“A星探行支队”</strong> 的总结<br>《海外实践全流程解决方案》，在此表示诚挚的感谢！</p>
+        </div>
+    </div>
+
+    <!-- 右侧详情 -->
+    <div id="content-container">
+        <div id="detail-display" class="detail-content">
+            <div class="welcome-msg">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15 15H3v2h12v-2zm0-8H3v2h12V7zM3 13h18v-2H3v2zm22-4h-6V7h6v2zm-6 8h6v-2h-6v2z"/>
+                </svg>
+                <h2>欢迎使用实践全流程系统</h2>
+                <p>请点击左侧流程图中的步骤节点，在此处查看具体的准备建议和操作指南。</p>
+            </div>
+        </div>
+        <button id="mobile-btn" class="mobile-back-btn">⬅ 返回导图</button>
+    </div>
+
+    <script>
+        const contentData = {
+            "member": `
+                <h2>支队员</h2>
+                <p>选拔支队员时的建议：</p>
+                <ul>
+                    <li>根据前期实践主题/方向/任务，初步确定整体支队员画像（比如专业调研实践要思考，需要支队员整体具备哪些专业的知识）。</li>
+                    <li>根据实践后期最终需要呈现的成果，针对性地寻找一些具有特定能力的同学（比如，由于实践成果不可避免要用大量宣传成果来呈现，所以可以针对性寻找擅长宣传工作的同学）。</li>
+                    <li>实践过程中的思维碰撞是很重要的财富，所以在前期支队组建时也应该尽可能使支队构成更加丰富多元，可以有意识地平衡男女比，文理兼容，吸纳多专业。</li>
+                    <li>题外话：建议有意识地寻找一些"<strong>社牛</strong>"同学，并在外联、调研、支队团建等工作中多和“社牛”同学沟通。厉害的“社牛”同学往往能够在对外链接的过程中发挥排头兵的作用从而推动整个支队的外联、调研等进度，并且还能够通过积极的支队团建让整个支队的感情得到升华。</li>
+                </ul>
+                <p>另外，对于海外实践来说，相比国内实践不确定性更大，因此支队分工不能太固化，可以根据阶段重点和个人特长<strong>及时调整成员分工</strong>，并且在各项工作中都注重集思广益。</p>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/blob/main/%E5%BE%80%E6%9C%9F%E6%94%AF%E9%98%9F%E5%8F%82%E8%80%83/%E5%85%B6%E4%BB%96/%E9%98%BF%E6%A0%B9%E5%BB%B7%E6%94%AF%E9%98%9F%E9%9D%A2%E8%AF%95%E9%A1%BB%E7%9F%A5.pdf" target="_blank">往期支队面试须知（PDF）</a> － 可作为选拔支队员时面试设计的参考。</li>
+                </ul>
+            `,
+            "counselor": `
+                <h2>辅导员</h2>
+                <p>辅导员的招募通常由书院负责。对于支队长而言，重要的是如何与带队辅导员密切配合，让辅导员充分发挥自身优势以帮助实践。</p>
+                <p>例如，可以让辅导员帮忙分管一些比较重要的领域，或在一些重要环节与辅导员共同深度策划，如<strong>带队老师确定</strong>，<strong>外联</strong>，<strong>思政教育</strong>，<strong>安全</strong>等。</p>
+                <p>需要注意的是，不建议让辅导员处理特别琐碎的工作。<del>辅导员和支队员还是不一样的（）</del></p>
+            `,
+            "teacher": `
+                <h2>带队老师</h2>
+                <p>带队老师的适合与否往往是实践能否顺利的关键。可以这样寻找带队老师：</p>
+                <ul>
+                    <li>邀请曾在目的地留学过、执教过、生活过的老师作为指导老师</li>
+                    <li>邀请研究方向和实践主题一致的老师</li>
+                    <li>如果以上两种都无从下手，可邀请系内外其他容易联系到的老师</li>
+                </ul>
+            `,
+            "team-role": `
+                <h2>支队分工</h2>
+                <p>通常根据实践需要需要将实践团队分为若干组别，每组可选取一位组长，也可以由支队长直接管理。</p>
+                <p><strong>【常见的组别有：】</strong></p>
+                <ul>
+                    <li>外联组：对接清华校内各单位、实践目的地各单位等</li>
+                    <li>内联组：支队成员保险购买、信息收集与汇总等。</li>
+                    <li>宣传文创组：视觉和文创设计、推送设计制作、视频拍摄等。</li>
+                    <li>学术调研组：主要负责专注于某一关键主题问题的调研、记录、思考、整理以及支队学术报告的撰写。</li>
+                    <li>特色活动组（按照实践情况，比如可以设置支教组、宣讲组、纪录片拍摄组等，可以根据主题活动的任务量大小合理增加组别）</li>
+                </ul>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/blob/main/%E6%96%87%E4%BB%B6/%E6%94%AF%E9%98%9F%E5%BB%BA%E8%AE%BE/%E5%86%85%E8%81%94%E5%9F%B9%E8%AE%AD_20260507114148.pdf" target="_blank">内联培训PPT（PDF）</a> － 可用于支队内联培训，帮助成员快速了解分工与协作方式。</li>
+                </ul>
+            `,
+            "team-info": `
+                <h2>支队信息搜集</h2>
+                <p>在实践中会经常需要上报成员信息，因此建议在尽量早的时候就收集全所有支队成员的信息，至少应包括：</p>
+                <ul>
+                    <li>个人基本信息（姓名、班级、学号、身份证号）</li>
+                    <li>个人联系方式（电话、微信号、邮箱）</li>
+                    <li>护照情况（护照号、签发地、去过哪些国家）</li>
+                    <li>紧急联系人（姓名及电话）</li>
+                    <li>其他个人信息（饮食习惯、兴趣特长等）</li>
+                </ul>
+            `,
+            "team-tool": `
+                <h2>项目管理工具</h2>
+                <p>海外实践完全可视作一个复杂的系统工程项目，因此建议使用一些专业的项目管理工具来帮助支队的建设与进度管理，如：</p>
+                <ul>
+                    <li>飞书</li>
+                    <li>Notion</li>
+                </ul>
+                <p>此外还可以采用的工具有：</p>
+                <ul>
+                    <li>清华云盘</li>
+                    <li>WPS 企业版（清华已购买 WPS VIP）建立支队共享工作空间</li>
+                    <li>腾讯文档等在线文档编辑</li>
+                </ul>
+                <p>不建议<strong>只</strong>使用微信群管理。</p>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://truth-flier-9df.notion.site/7707479922534841a73a6a3380399a51?v=ced9de451dc4484889dc9ba95005f455&pvs=74" target="_blank">往期英国实践支队 Notion 工作空间</a> － 可参考其项目管理架构与实际使用范例。</li>
+                </ul>
+            `,
+            "team-meeting": `
+                <h2>支队会议</h2>
+                <p>行前应该开多少次会？</p>
+                <p>这个问题没有正确的答案，只能说，<strong>根据支队需要确定</strong>。通常支队刚成立时的破冰会议和临近行前讲解具体实践过程的会议是一定要开的。建议会议不多于四次，每次不多于1小时。</p>
+                <p><del>毕竟没有人喜欢开会</del></p>
+            `,
+            "outreach": `
+                <h2>外联</h2>
+                <p>外联可以说是实践前期<strong>最重要</strong>的工作，它影响着实践的主题，决定着实践的下限。</p>
+                
+                <h3>WHAT-外联什么？</h3>
+                <p>从成功率的角度大概呈现递减关系</p>
+                <ol>
+                    <li><strong>学校老师</strong>（尤其是带队老师）<br>可先给校内相关老师（如在当地留学、生活过，或研究方向与之相关）发邮件，询问他们有无外联渠道或资源，可以的话让老师直接帮忙联络，支队再负责细节对接；</li>
+                    <li><strong>学校单位</strong><br>可询问学校全胜中心、社团、协会、具体院系等是否在当地有合作项目，借此渠道进行联系；</li>
+                    <li><strong>校友会与当地清华人</strong><br>要相信清华人的抱团能力x</li>
+                    <li><strong>当地中企、商会</strong><br>要相信清华在国人心中的地位x</li>
+                    <li><strong>私人途径</strong><br>要相信六人定律x<br>（认识的同学、亲友，或者同学之同学，亲友之亲友）</li>
+                    <li><strong>小红书等网络平台</strong><br>小红书真的好用，实测成功率挺高的。其他平台也可以试试。</li>
+                    <li><strong>公开信息直接联络当地机构</strong><br>公开信息主要包括企业官网邮箱、企业官网预留电话等，有一定概率对方不会回复</li>
+                </ol>
+
+                <h3>HOW-怎么外联？</h3>
+                <ul>
+                    <li>提前准备好支队介绍模板，尽量精美高级一些</li>
+                    <li>优先邮件联络，最好使用教育邮箱（xxx@mails.tsinghua.edu.cn) 带有 tsinghua 字样，常常具有更强的信用力和更高的被回复率。</li>
+                    <li>后期可加微信，whatsapp，ins等确定细节，必要时可电话联系</li>
+                    <li>联络时间：工作日，工作时间。发邮件的最好上午发，电话早10午2，先确认</li>
+                    <li>话术：多用敬语，给对方台阶下</li>
+                    <li>用好项目管理工具，同步进度，避免重复外联</li>
+                </ul>
+
+                <h3>WHY-外联为了？</h3>
+                <p>除了需要获得线下参访的许可外，外联还需要获得<strong>邀请函</strong>。办理批件至少需要<strong>每个实践城市至少一封邀请函</strong>。而从答辩成绩的角度，在答辩前最好能有四五封邀请函。</p>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/tree/main/%E6%96%87%E4%BB%B6/%E5%A4%96%E8%81%94" target="_blank">外联工作总结PPT等资料（目录）</a> － 包含往届外联经验分享与话术参考。</li>
+                    <li>往期支队介绍书（可作模板）：<a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/blob/main/%E5%BE%80%E6%9C%9F%E6%94%AF%E9%98%9F%E5%8F%82%E8%80%83/%E5%85%B6%E4%BB%96/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E8%B5%B4%E9%98%BF%E6%A0%B9%E5%BB%B7%E5%AD%A6%E7%94%9F%E8%B0%83%E7%A0%94%E5%AE%9E%E8%B7%B5%E6%94%AF%E9%98%9F%E7%AE%80%E4%BB%8B.pdf" target="_blank">中文版</a> | <a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/blob/main/%E5%BE%80%E6%9C%9F%E6%94%AF%E9%98%9F%E5%8F%82%E8%80%83/%E5%85%B6%E4%BB%96/Introduction%20to%20the%20Tsinghua%20University%20Student%20Field%20Study%20Team%20to%20Argentina.pdf" target="_blank">英文版</a></li>
+                </ul>
+            `,
+            "theme": `
+                <h2>确定调研主题</h2>
+                <p>理论上，实践主题应该是一开始就确定好的，甚至是因为实践主题才确定实践国。但实际操作时，往往是现有目的国，再根据目的国的特点与外联情况选择实践主题。实践主题的选择如同论文选题，主要回答四个问题：</p>
+                <p><strong>我要研究的东西是什么</strong></p>
+                <ol>
+                    <li>增强问题意识，针对社会现象或者某一话题提出自己的思考和问题。</li>
+                    <li>可以将学期中的疑惑转换成问题然后在假期实践中予以回答和解决。</li>
+                    <li>问题就是预期与现实之间的反差引起的心理困惑。据此可将问题分为三类：理论与现实的差异、政策与实践之间的差异、在同类事物比较中的差异。</li>
+                </ol>
+                <p><strong>我为什么要研究它？</strong></p>
+                <ol>
+                    <li>回答社会问题。针对社会现象和社会思潮、社会问题等进行研究。给出自己的答案。</li>
+                    <li>解决知识困惑。</li>
+                    <li>理论与实践相结合，认识到物质存在对于意识的决定性作用，以及意识对物质存在的反作用。</li>
+                </ol>
+                <p><strong>我该怎么样去研究它？</strong></p>
+                <ol>
+                    <li>概念化与可操作化。将朴素的想法和语言转化成科学准确的表述。随之将难以测度的概念问题转化成某一可以测度的指标或对象。</li>
+                    <li>有效数据收集、合理的统计方法分析、正确的计量手段使用。</li>
+                    <li>文献研究、问卷调查、实地访谈、亲历式观察等手段获取信息。</li>
+                </ol>
+                <p><strong>我该如何去呈现它最终的结果？</strong></p>
+                <ol>
+                    <li>合理的逻辑结构。<br>- 是什么→为什么→怎么办。<br>- 纲要→背景引入→提出问题→分析问题→解决问题→反思与对策→展望总结。</li>
+                    <li>提高信息效率，简洁明了。用最简单的话和 PPT 讲清楚复杂的问题。</li>
+                </ol>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/tree/main/%E6%96%87%E4%BB%B6/%E9%80%9A%E7%9F%A5" target="_blank">官方通知与政策文件（目录）</a> － 学校/院系发布的实践相关通知，可用于了解选题方向与要求。</li>
+                </ul>
+            `,
+            "preresearch": `
+                <h2>预调研</h2>
+                <p>“没有调查就没有发言权。”确定实践主题和外联对象，往往伴随着对实践地的预调研。此外，一篇优秀（字多）的预调研报告也是行前答辩的加分项。</p>
+                <p>预调研至少应该理清楚几个方面的问题：</p>
+                <ol>
+                    <li>目的国的基本政治、经济、社会情况；</li>
+                    <li>调研主题所在行业的基本情况，优势与特色；</li>
+                    <li>哪些高校/机构/企业值得外联。</li>
+                </ol>
+            `,
+            "visa": `
+                <h2>签证办理</h2>
+                <p>签证办理的难度差异很大，如果你是前往签证友好甚至免签的国家，那这部分你可以直接跳过；但如果你是前往非洲、南美等地，那签证办理可能会成为你最头疼的环节（之一）。</p>
+                <p>签证办理的大概流程以及注意事项有：</p>
+                <ol>
+                    <li><strong>护照办理</strong><br>在支队员确定的第一时刻就应该催促大家办理/准备好护照，通常需要1-2周；</li>
+                    <li><strong>找旅行社</strong><br>通常不建议大家DIY签证申请材料（除非点击即送），而是寻找有资质、有经验的旅行社协助办理。可以在携程、淘宝、小红书等平台上多方了解和比价；</li>
+                    <li><strong>签证材料准备</strong><br>按照旅行社的要求准备就行，尽量快</li>
+                    <li><strong>入境规则调研</strong><br><strong>有签证不代表一定能入境</strong>，一定要提前确认目的国的入境要求，如是否需要接种疫苗，现金、食物携带限制等/</li>
+                </ol>
+                <p>以下是对前往签证困难地的额外建议：</p>
+                <ol>
+                    <li><strong>快跑！</strong><br>现在换实践地还来得及；</li>
+                    <li><strong>找备用方案</strong><br>查看当地是否有其他签证政策，例如能否使用商务签，能否使用其他国家签证进入等；</li>
+                    <li><strong>作好拒签预案</strong><br>提前准备好，如果不少同学被拒签，被拒签同学的费用等应该如何处理，支队情绪如何安抚，是否需要以及来得及补招募队员等。</li>
+                </ol>
+            `,
+            "flight": `
+                <h2>预定机酒</h2>
+                <p>在大家办理好签证确定可以去之后，便可尽快预订机票、酒店，以及实践地城市间交通，可以选择<strong>旅行社代购</strong>或者<strong>自行购买</strong>。</p>
+                <p>酒店选择的注意事项：</p>
+                <ol>
+                    <li>注意学校规定的报销上限；</li>
+                    <li>在报销范围内，尽量选择安全、交通便利的街区居住；</li>
+                    <li>注意酒店的入住规则和要求。</li>
+                </ol>
+            `,
+            "transport": `
+                <h2>实践地交通</h2>
+                <p>通常，在实践地的交通方式有两种选择：<strong>租车</strong>或者<strong>乘坐当地公共交通（包括打车）</strong>。</p>
+                <p>是否租车主要取决于：</p>
+                <ol>
+                    <li>当地安全性</li>
+                    <li>实践地之间距离</li>
+                    <li>当地公共交通发达程度</li>
+                    <li><strong>院系和成员经济承受能力</strong></li>
+                </ol>
+                <p>如果要租车的话，尽量找本地公司，不要找华人中介，会<strong>贵得要死</strong>。</p>
+                <p>乘坐当地公共交通一般能更深入地接触当地、体验当地人生活，虽然不是那么便捷，但在安全性满足的前提下，也不失为一种好的选择。</p>
+            `,
+            "safety": `
+                <h2>安全预案</h2>
+                <p>安全永远是实践的第一优先级。在进行预调研的时候，了解清楚实践地那些街区较为安全，有哪些常见的安全事故（如偷盗、抢劫），以及紧急求助方式等是非常重要的。</p>
+                <p>可以采取的安全措施有：</p>
+                <ul>
+                    <li>购买手机/相机挂绳/弹力绳</li>
+                    <li>手机、电脑数据提前备份</li>
+                    <li>不穿过于显眼的服装</li>
+                    <li>结伴出行，避免单独行动</li>
+                </ul>
+            `,
+            "insurance": `
+                <h2>购买保险</h2>
+                <p>有的旅行社会赠送。如果不送的话，购买也很简单，例如支付宝·无忧保·境外旅行险上就可以直接购买。（这不是广告）</p>
+            `,
+            "manual": `
+                <h2>支队手册</h2>
+                <p>支队手册的常见内容有：</p>
+                <ul>
+                    <li>实践日程和关于参访机构的介绍</li>
+                    <li>当地交通路线图、急救与报警电话</li>
+                    <li>大使馆联系方式</li>
+                    <li>支队成员间联系方式（国内外手机号）</li>
+                    <li><strong>外文提问模板（如果你不想你的队员只会阿巴阿巴的话）</strong></li>
+                </ul>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://cloud.tsinghua.edu.cn/d/c66e8b61195240588ccd/" target="_blank">往期支队手册合集（清华云盘）</a> － 可下载参考各支队的实际手册，了解内容结构与排版风格。</li>
+                </ul>
+            `,
+            "others": `
+                <h2>其他准备</h2>
+                <ol>
+                    <li>换汇、转接头、电话/流量卡、常用药品、队旗、礼物；</li>
+                    <li>家长知情同意书，个人安全承诺书；</li>
+                    <li>征求意见函（非院系同学、研究生需要）</li>
+                </ol>
+            `,
+            "training": `
+                <h2>行前培训</h2>
+                <p>目前学校组织的培训已经尽量简化，全员必须完成的只有<strong>国际处</strong>的行前培训，在<strong>荷塘雨课堂</strong>上加入班级听课就好（全线上）。另外还有<strong>全胜中心</strong>的可选上的培训。此外还有针对支队长的培训。</p>
+                <p>不过，建议支队长再给成员进行至少一次针对实践目的地的培训，让大家了解实践地情况，实践目的，也增进队内凝聚力。</p>
+            `,
+            "approval": `
+                <h2>出境申请</h2>
+                <p>这是行前最复杂的环节（之一），但好在现在只需要在外事管理系统<strong>线上</strong>一通乱填（bushi）就行了。关于出境申请的详细步骤，可参见<strong>因公出国（境）申请指南.pdf</strong>。这里简述为以下几个环节：</p>
+                <h3>第一步：院系立项</h3>
+                <p>这一步<strong>由院系老师完成</strong>，实践支队只需要上报相关信息就行，除了时间、地点、带队老师等基本信息外，还需要准备的资料/明确的事项有：</p>
+                <ol>
+                    <li>邀请函，每个实践城市一封；</li>
+                    <li>项目类别，通过行前答辩（拿A）即为校团委主管支队，项目类别为“海外实践实习项目（校团委）”，否则为院系主管，类别为“海外实践实习项目”；</li>
+                    <li>经费资助名称，本科生海外交流经费；</li>
+                    <li>确保支队已经完成（国际处的）行前培训并且购买保险。</li>
+                </ol>
+                <p>为立项完成后，即可获得<strong>项目编号</strong>。</p>
+                <h3>第二步：团长（支队长）出境申请</h3>
+                <p>在*信息门户-应用导航-外事-外事项目管理系统*中，由<strong>一位</strong>支队长进行团组出访任务申请。团组出访任务申请含“出访任务信息”“行程信息”“团组成员”“提交”四个环节。这部分按照系统上的内容认真填写就行，强调一些小点：</p>
+                <ol>
+                    <li>主责单位就是院系，主管单位是校团委或院系（看行前答辩成绩）；</li>
+                    <li>团组成员包含辅导员，不包含带队导师，记得导入团组成员信息的时候加上辅导员；</li>
+                    <li>团组成员可以不坐同一班飞机，但必须<strong>同进同出</strong>，出入境日期要一致；</li>
+                    <li>在中转过境国家住宿，需要必要性说明以及院系外事老师同意；</li>
+                </ol>
+                <h3>第三步：团员（支队员）出境申请</h3>
+                <p>按照要求填就行。注意辅导员和另外一位支队长也是团员。</p>
+                <h3>第四步：教师出境申请</h3>
+                <p>严格来说不是第四步，教师申请是独立于团组申请的。在填写申请前，需要先完成<strong>报备和公示</strong>。比较重要的点是：</p>
+                <ol>
+                    <li>出国（境）任务性质：学生团带队；</li>
+                    <li>费用来源：全部校内支付；</li>
+                </ol>
+                <h3>第五步：费用预算申请</h3>
+                <p>以上四步走完后，即可获得<strong>批件</strong>。而这一步是为了获取<strong>换汇预算单</strong>，换汇预算单是用来借款/报销的必需品，有了它财务处才会给支队行前借款，或是行后报销。</p>
+                <p>如果要租车的话，需要在此步填写租车说明和具体信息。</p>
+                <h3>希望你不会遇到：团组任务变更</h3>
+                <p>如果支队的行程、人员、费用等出现变化，可以申请团组任务变更，每次变更后会获得一张变更表，后续报销时记得<strong>批件和所有变更表</strong>的PDF文件都要准备。</p>
+                <h3>最后：</h3>
+                <p>出境审批的流程非常长，大概20天，所以<strong>一定要尽早填写！</strong></p>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/tree/main/%E6%96%87%E4%BB%B6/%E5%87%BA%E5%A2%83%E7%94%B3%E8%AF%B7" target="_blank">详细指导文件（目录）</a> － 包含因公出国（境）申请指南等更细致的操作说明。</li>
+                </ul>
+            `,
+            "defense": `
+                <h2>行前答辩</h2>
+                <p>行前答辩通常需要提交的文件有：</p>
+                <ul>
+                    <li>行前筹备工作报告</li>
+                    <li>行前评审PPT</li>
+                </ul>
+                <p>答辩需要讲清楚实践主题特色（为什么非去这里不可）以及支队做了哪些准备（越全面越好）</p>
+                <p>我理解的加分项有：</p>
+                <ol>
+                    <li>独特的实践主题</li>
+                    <li>满满的实践行程（以及不少的邀请函）</li>
+                    <li>满满的工作记录 （开了很多会/培训等）</li>
+                    <li>优秀的预调研报告</li>
+                    <li>挑不出毛病的安全工作</li>
+                    <li>可落实的成果 （预计产出……）</li>
+                </ol>
+                <p><del>反正吹牛就行了</del></p>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/tree/main/%E5%BE%80%E6%9C%9F%E6%94%AF%E9%98%9F%E5%8F%82%E8%80%83/%E8%A1%8C%E5%89%8D%E7%AD%94%E8%BE%A9/PPT" target="_blank">往期行前答辩PPT（目录）</a> － 可下载多支队伍的答辩PPT，参考其逻辑结构与呈现方式。</li>
+                </ul>
+            `,
+            "reimburse_notice": `
+                <h2>其他注意事项</h2>
+                <p>问清楚报销规则（逃</p>
+            `,
+            "practice-safety": `
+                <h2>安全</h2>
+                <p>再次强调，安全是实践中的头等大事！所以务必让每位支队成员绷紧安全的这根弦，需要给支队员强调的重点有：</p>
+                <ol>
+                    <li>强调结伴出行，绝对不可单独行动；</li>
+                    <li>不前往较为混乱的地区；</li>
+                    <li>提前了解当地就医政策，万一遇到成员受伤情况，及时处置；</li>
+                    <li>如果发生财物被盗窃的情况，即使报警，并保存相关证据，以便日后向保险公司索赔。</li>
+                </ol>
+                <p>此外，支队长应该做到：</p>
+                <ul>
+                    <li>每晚定时统计是否所有人已经回到住宿地；</li>
+                    <li>每天向实践组汇报安全情况；</li>
+                    <li>及时关心支队员身体状况。</li>
+                </ul>
+            `,
+            "practice-record": `
+                <h2>记录</h2>
+                <p>在实践行程中一定要注意<strong>安排记录人</strong>，避免”回到酒店，脑袋空空；打开电脑，硬盘空空“的情况。支队长和每日负责人确定每日的文字记录人、图片记录人（实践行程中常常由专人负责或者按照行程负责）、视频记录人（实践行程中常常由专人负责）。</p>
+                <p>此外，建议支队每天都召开一次<strong>总结会</strong>，总结当日行程，让同学们抒发感想，并且让每日负责人记录下来。总结会可以不用很正式，例如在晚餐的时候边吃边聊就行。重要的是及时总结并记录下各种新生的 idea。</p>
+            `,
+            "practice-control": `
+                <h2>控场</h2>
+                <p>在实践中难免会碰到一些意想不到的情况，例如活动时长超时，有的活动临时取消/增加，或者活动冷场等等，面对这些情况，需要及时做出调整和安排，以确保实践工作能够顺利进行。</p>
+                <blockquote>清华大学乡村振兴工作站赴贵州凤冈支队：在实践过程中遇到了突发事件，例如第一天参观交流时间较长，加上天气炎热，超出了我们的预期，因此我们对后续行程进行了一定的缩短。最后一天由于天气原因（下暴雨），预定的行程被迫中断，我们与政府商议后进行了灵活的调整，改为采访当地基层工作者，并整理了前几天的实践成果。</blockquote>
+            `,
+            "practice-others": `
+                <h2>其他</h2>
+                <ol>
+                    <li>记得向酒店要水单！保存好各种发票凭证！</li>
+                    <li>要注意有没有成员不太能融入集体的情况，支队长、辅导员和老师要积极帮助ta主动融入支队大家庭。</li>
+                    <li><strong>来都来了，别亏待自己，该玩还是得玩（逃</strong></li>
+                </ol>
+            `,
+            "post-publicity": `
+                <h2>宣传</h2>
+                <ul>
+                    <li><strong>国家/省市级媒体</strong><br>注意，只有校团委文件上写明的国家/省市级媒体才算！具体来说，国家级媒体指的是新华社、人民日报、光明日报、中青报、央视等。想要再这些平台上发文，直接投稿估计是没戏的，本质上是一场拼资源的游戏，建议问问带队老师、院系老师有没有什么路子；</li>
+                    <li><strong>校级媒体</strong><br>包括清华大学公众号、<strong>清华大学社会实践、清华大学国际教育</strong>、清华新闻网等，这是海外实践宣传比拼的<strong>主平台</strong>，公众号位置有限，大概率需要抢一抢。建议发布≥3篇内容。</li>
+                    <li><strong>Vlog</strong><br>可发表在<strong>清华大学社会实践、清华大学国际教育</strong>等视频号上，这个主要看有没有成员有这方面的能力，没人会剪视频的话那也没招（不过其实不难学）。发Vlog比较有特色而且不像推送那样拥挤，所以建议支队搞一个。</li>
+                    <li><strong>海外媒体</strong><br>在海外媒体上宣传，上限很高，下限也很低，但很多时候主动权不在自己手上，主要看对方有没有这个意愿（当然也可以适当询问）。</li>
+                    <li><strong>院系级媒体</strong><br>如果支队前面的宣传都开摆了怎么办？那在自己院系平台上发推送也是一种不错的补救措施，反正有总比没有强。</li>
+                </ul>
+                <p>题外话，似乎从25年开始，对宣传的硬性要求少了很多，不再有在校级平台上发多少篇推送/Vlog就拿多少分的规定，给分更加模糊。尽管如此，还是希望大家对自己的支队有较高要求，所以以上建议依然按照曾经给分的标准给出。</p>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/blob/main/%E6%96%87%E4%BB%B6/%E5%AE%A3%E4%BC%A0/%E5%AE%A3%E4%BC%A0.pptx" target="_blank">宣传工作总结PPT（PowerPoint）</a> － 系统总结了宣传渠道、策略与实用技巧，可直接下载参考。</li>
+                </ul>
+            `,
+            "post-summary": `
+                <h2>总结与答辩</h2>
+                <p>校团委实践总结要求提交的三项总结材料为：</p>
+                <ol>
+                    <li>调研报告</li>
+                    <li>总结工作报告</li>
+                    <li>总结答辩PPT</li>
+                </ol>
+                <p>没有太多的建议，参考参考往期优秀支队的吧。<strong>记得趁早开始就行。</strong></p>
+                <p>以及，调研报告别用AI写，<del>太明显了。</del></p>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://cloud.tsinghua.edu.cn/d/2dbc3f4978d6472fa54d/" target="_blank">往期支队成果包（清华云盘）</a> － 包含优秀调研报告、总结报告及答辩PPT，可作为撰写时的范本。</li>
+                </ul>
+            `,
+            "post-reimburse": `
+                <h2>报销</h2>
+                <p>OK，恭喜你来到海外实践最后也是最复杂（之一）的环节———实践报销！具体的报销流程和规则可参考相关PPT，这里给出大致的步骤：</p>
+                <h3>1. 材料准备</h3>
+                <p>通常而言，每位成员需要准备材料有：</p>
+                <p><strong>证件类：</strong></p>
+                <ol>
+                    <li>批件以及变更表（PDF）；（外事项目管理系统获取）</li>
+                    <li>换汇单（PDF）；（外事项目管理系统获取）</li>
+                    <li>出入境记录（PDF）；（移民局12367小程序上获取，不会查小红书）</li>
+                    <li>护照首页及签证页（照片/PDF）。</li>
+                </ol>
+                <p><strong>发票类：</strong></p>
+                <ol>
+                    <li>国际差旅：（机票发票+支付截图）/ 飞机行程单；</li>
+                    <li>当地城市间交通：发票（recipt/invoice）+登机牌/纸质车票/支付截图等；</li>
+                    <li>酒店发票+水单（+支付截图）；</li>
+                    <li>签证发票（+支付截图）；</li>
+                    <li>保险发票（+支付截图）+ 保险单；</li>
+                </ol>
+                <p>注意，<strong>大于1000元</strong>的交易都需要支付截图。</p>
+                <h3>2. 填表</h3>
+                <p>需要填写的表格有：</p>
+                <ol>
+                    <li>决算表</li>
+                    <li>差旅详情表</li>
+                    <li>收支情况表</li>
+                </ol>
+                <p>三个表数据一致，最后总额是乘以比例之后的。</p>
+                <hr>
+                <p><strong>📎 参考资源：</strong></p>
+                <ul>
+                    <li><a href="https://github.com/While-Lian/Files-for-oversea-fieldresearch/tree/main/%E6%96%87%E4%BB%B6/%E6%8A%A5%E9%94%80" target="_blank">详细报销文件（目录）</a> － 包含报销细则、表格模板等，帮助理清报销全流程。</li>
+                </ul>
+            `
+        };
+
+        // 分页切换
+        const tabs = document.querySelectorAll('.tab');
+        const pages = document.querySelectorAll('.page');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                tabs.forEach(t => t.classList.remove('active'));
+                pages.forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                const targetPage = document.getElementById(this.getAttribute('data-page'));
+                targetPage.classList.add('active');
+            });
+        });
+
+        // 节点点击与详情展示
+        const nodes = document.querySelectorAll('.node');
+        const detailDisplay = document.getElementById('detail-display');
+        const contentContainer = document.getElementById('content-container');
+        const backBtn = document.getElementById('mobile-btn');
+
+        nodes.forEach(node => {
+            node.addEventListener('click', function() {
+                nodes.forEach(n => n.classList.remove('active'));
+                this.classList.add('active');
+                const targetKey = this.getAttribute('data-target');
+                if (contentData[targetKey]) {
+                    detailDisplay.innerHTML = contentData[targetKey];
+                    contentContainer.scrollTop = 0;
+                    if (window.innerWidth <= 768) {
+                        contentContainer.classList.add('slide-in');
+                    } else {
+                        detailDisplay.style.opacity = 0;
+                        setTimeout(() => {
+                            detailDisplay.style.transition = 'opacity 0.3s';
+                            detailDisplay.style.opacity = 1;
+                        }, 50);
+                    }
+                }
+            });
+        });
+
+        backBtn.addEventListener('click', function() {
+            contentContainer.classList.remove('slide-in');
+        });
+    </script>
+</body>
+</html>
