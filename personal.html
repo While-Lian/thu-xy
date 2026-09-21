@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>个人管理 · THU-XY</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* 个人管理页面专用样式 */
+    .personal-main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .section-block {
+      background: #fff;
+      border: 1px solid var(--gray-border);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      color: var(--thu-purple);
+      border-left: 4px solid var(--thu-purple);
+      padding-left: 12px;
+      margin-bottom: 24px;
+    }
+
+    /* PDF 阅读器容器 */
+    .pdf-viewer-container {
+      margin-top: 20px;
+      border: 1px solid var(--gray-border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f5f5f5;
+    }
+
+    .pdf-viewer {
+      width: 100%;
+      height: 800px;
+      border: none;
+    }
+
+    .pdf-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    /* 友情链接卡片 */
+    .link-card {
+      display: block;
+      padding: 24px;
+      border: 2px solid var(--gray-border);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text-main);
+      transition: all 0.3s;
+      background: #fff;
+    }
+
+    .link-card:hover {
+      border-color: var(--thu-purple);
+      box-shadow: 0 4px 12px rgba(102, 8, 116, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .link-card-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--thu-purple);
+      margin-bottom: 8px;
+    }
+
+    .link-card-desc {
+      color: var(--gray-text);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .link-card-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--thu-purple-light);
+      color: var(--thu-purple);
+      border-radius: 12px;
+      font-size: 12px;
+      margin-top: 12px;
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 640px) {
+      .personal-main {
+        padding: 16px;
+      }
+
+      .section-block {
+        padding: 20px;
+      }
+
+      .section-title {
+        font-size: 20px;
+      }
+
+      .pdf-viewer {
+        height: 600px;
+      }
+
+      .pdf-actions {
+        flex-direction: column;
+      }
+
+      .pdf-actions .btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航条 -->
+  <div class="top-bar">
+    <span class="top-bar-school">清华大学 · 行健书院</span>
+    <a href="index.html" class="top-bar-back">← 返回首页</a>
+  </div>
+
+  <!-- 页头 -->
+  <header class="class-header">
+    <h1>个人管理</h1>
+  </header>
+
+  <main class="personal-main">
+    <!-- 板块一：行健班委手册 -->
+    <section class="section-block">
+      <h2 class="section-title">行健班委手册</h2>
+      
+      <div class="pdf-actions">
+        <a href="行健书院班委手册.pdf" download class="btn btn-primary">📥 下载 PDF</a>
+        <button id="toggle-fullscreen" class="btn btn-ghost">⛶ 全屏阅读</button>
+      </div>
+
+      <div class="pdf-viewer-container">
+        <iframe 
+          class="pdf-viewer" 
+          src="行健书院班委手册.pdf#toolbar=1&navpanes=1&scrollbar=1" 
+          type="application/pdf"
+          title="行健书院班委手册">
+          <p>您的浏览器不支持 PDF 预览，请<a href="行健书院班委手册.pdf" download>点击下载</a>查看。</p>
+        </iframe>
+      </div>
+
+      <p style="margin-top: 16px; color: var(--gray-text); font-size: 14px;">
+        💡 提示：可以在上方阅读器中直接翻阅手册，也可以点击"下载 PDF"保存到本地。
+      </p>
+    </section>
+
+    <!-- 板块二：THU 手册（友情链接） -->
+    <section class="section-block">
+      <h2 class="section-title">THU 手册</h2>
+      
+      <a href="https://thubook.help/" target="_blank" class="link-card">
+        <div class="link-card-title">THUxk - THU学术资源与学习社区</div>
+        <div class="link-card-desc">
+          Thubook校园生存手册 & Thucourse选课点评社区，由清华同学自发维护的学习资源平台。
+          包含课程评价、学习资料、生活指南等丰富内容。
+        </div>
+        <span class="link-card-badge">🔗 友情链接</span>
+      </a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 行健书院班级管理平台 · 仅供班级内部使用</p>
+  </footer>
+
+  <script>
+    // 全屏阅读功能
+    document.getElementById('toggle-fullscreen').addEventListener('click', () => {
+      const viewer = document.querySelector('.pdf-viewer-container');
+      if (!document.fullscreenElement) {
+        viewer.requestFullscreen().catch(err => {
+          alert('无法进入全屏模式：' + err.message);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // 监听全屏变化，调整按钮文字
+    document.addEventListener('fullscreenchange', () => {
+      const btn = document.getElementById('toggle-fullscreen');
+      if (document.fullscreenElement) {
+        btn.textContent = '⛶ 退出全屏';
+      } else {
+        btn.textContent = '⛶ 全屏阅读';
+      }
+    });
+  </script>
+</body>
+</html>
