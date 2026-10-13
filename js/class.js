@@ -38,19 +38,28 @@
   document.getElementById("class-name").textContent = classInfo.name + " · 班级管理";
   document.title = classInfo.name + " · THU-XY";
 
-  // 从 Supabase 读取班级密码
-  async function getClassPassword() {
+  // 计算 SHA-256 哈希（用于密码校验，避免明文传输和存储）
+  async function sha256(text) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  // 从 Supabase 读取班级密码哈希值
+  async function getClassPasswordHash() {
     try {
       const { data, error } = await supabaseClient
         .from("class_config")
-        .select("password")
+        .select("password_hash")
         .eq("class_id", classId)
         .single();
 
       if (error) throw error;
-      return data ? data.password : null;
+      return data ? data.password_hash : null;
     } catch (e) {
-      console.error("读取密码失败", e);
+      console.error("读取密码哈希失败", e);
       return null;
     }
   }
@@ -68,14 +77,15 @@
   }
 
   async function tryLogin() {
-    const correctPassword = await getClassPassword();
+    const correctHash = await getClassPasswordHash();
     
-    if (!correctPassword) {
+    if (!correctHash) {
       pwdError.textContent = "网络异常，请检查网络后重试";
       return;
     }
 
-    if (pwdInput.value === correctPassword) {
+    const inputHash = await sha256(pwdInput.value);
+    if (inputHash === correctHash) {
       sessionStorage.setItem(SESSION_KEY, "1");
       unlock();
     } else {
@@ -685,18 +695,20 @@
         return;
       }
 
-      // 验证旧密码
-      const correctPassword = await getClassPassword();
-      if (oldPassword !== correctPassword) {
+      // 验证旧密码（用哈希比对）
+      const correctHash = await getClassPasswordHash();
+      const oldHash = await sha256(oldPassword);
+      if (oldHash !== correctHash) {
         passwordModalError.textContent = "当前密码错误";
         return;
       }
 
-      // 更新密码
+      // 更新密码（存储新密码的哈希值）
+      const newHash = await sha256(newPassword);
       try {
         const { error } = await supabaseClient
           .from("class_config")
-          .update({ password: newPassword })
+          .update({ password_hash: newHash })
           .eq("class_id", classId);
 
         if (error) throw error;
