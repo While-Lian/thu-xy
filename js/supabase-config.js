@@ -17,3 +17,5 @@ const SUPABASE_KEY = "sb_publishable_SkFEXomtT0UhDObaetnNIw_GHO2NZ6G";
 
 // 初始化 Supabase 客户端（使用 window.supabase 避免变量名冲突）
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+window.supabaseClient = supabaseClient;
