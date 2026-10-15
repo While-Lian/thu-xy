@@ -118,6 +118,47 @@
 
         <button id="add-activity" class="btn btn-primary add-btn">＋ 添加活动</button>
       </section>
+      <!-- ========== 班级论坛 ========== -->
+      <section id="forum-section" class="forum-section">
+        <div class="forum-header">
+          <h2>💬 班级论坛</h2>
+          <span id="forum-status" class="forum-status"></span>
+        </div>
+
+        <div class="post-form">
+          <input
+            type="text"
+            id="post-author"
+            placeholder="你的名字（或昵称）"
+            maxlength="20"
+            class="post-author-input"
+          />
+          <textarea
+            id="post-content"
+            placeholder="说点什么吧……（Ctrl+Enter 快速发布）"
+            maxlength="500"
+            rows="3"
+            class="post-content-input"
+          ></textarea>
+          <div class="post-form-footer">
+            <span id="post-char-count" class="char-count">0 / 500</span>
+            <button id="post-submit" class="btn-primary">发布</button>
+          </div>
+        </div>
+
+        <div id="post-list" class="post-list">
+          <div class="post-empty">还没有人发言，来抢沙发吧 🛋️</div>
+        </div>
+      </section>
+
+
+
+
+
+
+
+
+
 
     </main>
 
@@ -194,5 +235,6 @@
   <script src="js/supabase-config.js"></script>
   <script src="js/config.js"></script>
   <script src="js/class.js"></script>
+  <script src="js/forum.js"></script>
 </body>
 </html>
