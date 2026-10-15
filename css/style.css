@@ -831,3 +831,78 @@ body {
     font-size: 12px;
   }
 }
+/* ===== 论坛板块 ===== */
+.forum-section {
+  margin-top: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(102, 0, 153, 0.08);
+}
+.forum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+  border-bottom: 2px solid #660099;
+  padding-bottom: 0.8rem;
+}
+.forum-header h2 { margin: 0; color: #660099; font-size: 1.3rem; }
+.forum-status { font-size: 0.8rem; color: #999; }
+.forum-status.online::before { content: "● "; color: #4caf50; }
+
+.post-form { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
+.post-author-input, .post-content-input {
+  border: 1px solid #e0d0ea;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+.post-author-input:focus, .post-content-input:focus {
+  outline: none;
+  border-color: #660099;
+  box-shadow: 0 0 0 3px rgba(102, 0, 153, 0.1);
+}
+.post-author-input { width: 200px; }
+.post-content-input { resize: vertical; min-height: 70px; }
+.post-form-footer { display: flex; justify-content: space-between; align-items: center; }
+.char-count { font-size: 0.8rem; color: #aaa; }
+
+.btn-primary {
+  background: #660099;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.4rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.btn-primary:hover { background: #4d0073; }
+.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+
+.post-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.post-item {
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: #faf7fc;
+  border-left: 3px solid #660099;
+  position: relative;
+}
+.post-item .post-meta { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.4rem; }
+.post-item .post-author { font-weight: 600; color: #660099; font-size: 0.9rem; }
+.post-item .post-time { font-size: 0.75rem; color: #bbb; }
+.post-item .post-content { font-size: 0.95rem; color: #333; line-height: 1.5; word-break: break-word; }
+.post-item .post-delete {
+  position: absolute; top: 0.6rem; right: 0.8rem;
+  background: none; border: none; color: #ccc; cursor: pointer;
+  font-size: 0.8rem; opacity: 0;
+}
+.post-item:hover .post-delete { opacity: 1; }
+.post-item .post-delete:hover { color: #e53935; }
+.post-empty { text-align: center; color: #bbb; padding: 2rem 0; font-size: 0.9rem; }
+
+@media (max-width: 600px) {
+  .post-author-input { width: 100%; }
+  .forum-section { padding: 1rem; }
+}
