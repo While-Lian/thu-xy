@@ -50,24 +50,19 @@
           </div>
           <div class="input-wrap">
             <span class="input-icon">👤</span>
-            <input type="text" id="reg-nickname" placeholder="昵称" required maxlength="20" />
-          </div>
-          <div class="input-wrap">
-            <span class="input-icon">🏫</span>
-            <select id="reg-class" required>
-              <option value="">请选择班级</option>
-              <option value="xingjian63">行健63班</option>
-              <option value="xingjian-li6">行健-力6班</option>
-            </select>
+            <input type="text" id="reg-nickname" placeholder="昵称（同学看到的名字）" required maxlength="20" />
           </div>
           <div class="input-wrap">
             <span class="input-icon">🔑</span>
-            <input type="text" id="reg-admin-code" placeholder="管理员邀请码（选填，班委填）" />
+            <input type="text" id="reg-invite-code" placeholder="邀请码（老师/辅导员填，同学留空）" />
           </div>
           <button type="submit" class="btn-login">注 册</button>
         </form>
         <div class="login-options">
           <a href="#" id="to-login">已有账号？返回登录</a>
+        </div>
+        <div class="auth-hint" id="reg-hint">
+          普通同学无需邀请码；老师/辅导员请填写老师邀请码
         </div>
       </div>
 

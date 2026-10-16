@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据统计</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>📊 数据统计</h1>
+      <p class="page-desc">班级活跃度与运营数据</p>
+    </header>
+
+    <!-- 概览卡片 -->
+    <section class="block">
+      <h2 class="block-title">整体概览</h2>
+      <div id="stats-cards" class="stats-cards">
+        <div class="stats-empty">加载中…</div>
+      </div>
+    </section>
+
+    <!-- 最近 7 天发帖趋势 -->
+    <section class="block">
+      <h2 class="block-title">📈 最近 7 天发帖趋势</h2>
+      <div id="daily-chart" class="daily-chart">
+        <div class="stats-empty">加载中…</div>
+      </div>
+    </section>
+
+    <!-- 两列：发帖排行 + 文件上传排行 -->
+    <div class="stats-grid">
+      <section class="block">
+        <h2 class="block-title">🏆 发帖排行（Top 10）</h2>
+        <div id="post-ranking" class="ranking-list">
+          <div class="stats-empty">加载中…</div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2 class="block-title">📁 文件上传排行</h2>
+        <div id="file-ranking" class="ranking-list">
+          <div class="stats-empty">加载中…</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 活动参与率 -->
+    <section class="block">
+      <h2 class="block-title">🎯 活动参与统计</h2>
+      <div id="activity-stats" class="activity-stats">
+        <div class="stats-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 数据统计</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/stats.js"></script>
+</body>
+</html>

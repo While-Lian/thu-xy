@@ -16,6 +16,14 @@
     </header>
 
     <section class="block">
+      <!-- 文件夹筛选 -->
+      <div class="folder-bar">
+        <div id="folder-tabs" class="folder-tabs">
+          <button class="folder-tab active" data-folder="">📂 全部</button>
+        </div>
+        <input type="text" id="file-search" class="file-search" placeholder="🔍 搜索文件名…" />
+      </div>
+
       <div id="drop-zone" class="drop-zone">
         <div class="drop-zone-inner">
           <div class="drop-icon">⬆️</div>
@@ -36,11 +44,32 @@
     <p>THU-XY · 班级文件</p>
   </footer>
 
+  <!-- 上传弹窗（选文件夹） -->
+  <div id="upload-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 420px;">
+      <h3>上传文件</h3>
+      <p style="color:#666;font-size:13px;margin-bottom:12px;">
+        文件：<b id="upload-filename" style="color:#660874;">—</b>
+      </p>
+      <div class="form-stack" style="max-width:100%;">
+        <label style="font-size:13px;color:#666;">文件夹</label>
+        <input type="text" id="upload-folder" list="folder-datalist" placeholder="如：活动照片 / 学习资料" maxlength="20" />
+        <datalist id="folder-datalist"></datalist>
+      </div>
+      <p id="upload-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="upload-cancel" class="btn btn-ghost">取消</button>
+        <button id="upload-confirm" class="btn btn-primary">上传</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/config.js"></script>
   <script src="js/common.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
   <script src="js/files.js"></script>
 </body>
 </html>

@@ -64,7 +64,19 @@
 
     <section class="block danger-zone">
       <h2 class="block-title danger-title">危险区域</h2>
+
       <div class="danger-row">
+        <div class="danger-info">
+          <div class="danger-title-text">退出当前班级</div>
+          <div class="danger-desc">
+            退出后你将从本班移除，帖子/文件等仍然保留。<br />
+            你可以重新申请加入或加入其他班级。
+          </div>
+        </div>
+        <button id="leave-class-btn" class="btn btn-danger">退出班级</button>
+      </div>
+
+      <div class="danger-row" style="margin-top:20px;">
         <div class="danger-info">
           <div class="danger-title-text">注销账号</div>
           <div class="danger-desc">
@@ -105,6 +117,7 @@
   <script src="js/config.js"></script>
   <script src="js/common.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
   <script src="js/profile.js"></script>
 </body>
 </html>

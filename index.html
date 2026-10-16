@@ -24,8 +24,20 @@
       <div id="home-schedule-list" class="home-schedule-list"></div>
     </section>
 
+    <!-- 班级公告 -->
+    <section class="block" id="announce-block">
+      <div class="block-header">
+        <h2 class="block-title">📣 班级公告</h2>
+        <button id="new-ann-btn" class="btn btn-primary btn-small" style="display:none;">＋ 发布公告</button>
+      </div>
+      <div id="announce-list" class="announce-list">
+        <div class="announce-empty">加载中…</div>
+      </div>
+    </section>
+
+    <!-- 班级事务公告板 -->
     <section class="block">
-      <h2 class="block-title">📌 班级公告板</h2>
+      <h2 class="block-title">📌 班级事务</h2>
       <div id="announcement-list" class="announcement-list">
         <div class="announcement-empty">加载中…</div>
       </div>
@@ -39,9 +51,71 @@
         <span id="about-devs-list"></span>
       </div>
 
-      <!-- ========== 更新日志 ========== -->
       <div class="changelog">
         <div class="changelog-title">📝 更新日志</div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v3.2.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>论坛分页</b>：首屏只加载 20 条，底部"加载更多"翻页，突破 100 条上限</li>
+            <li><b>骨架屏</b>：论坛、文件、成员墙加载时显示灰色占位卡片，不再只有"加载中…"</li>
+          </ul>
+        </div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v3.1.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>帖子图片</b>：发帖可附带最多 9 张图片，点击可全屏预览</li>
+            <li><b>@提及</b>：输入 @ 弹出成员列表，被提及者收到通知</li>
+            <li><b>数据统计</b>：班委/老师可查看班级活跃度、发帖排行、文件排行、活动参与率</li>
+          </ul>
+        </div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v3.0.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>公告系统</b>：班委/老师可发布公告，支持置顶、编辑、删除</li>
+            <li><b>班级相册</b>：照片墙，支持批量上传、点击预览、管理员删除</li>
+            <li><b>顶栏重设计</b>：主链接保留 6 项，管理项收进下拉菜单，个人管理移回顶栏</li>
+          </ul>
+        </div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v2.5.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>通知中心</b>：申请 / 批准 / 拒绝通知，顶栏红点徽章</li>
+            <li><b>退出班级</b>：个人中心可退出当前班级</li>
+            <li><b>文件分类</b>：上传时填文件夹，顶部按文件夹筛选</li>
+            <li><b>帖子搜索</b>：论坛顶部搜索框，高亮匹配</li>
+            <li><b>头像墙</b>：班级事务页显示成员头像</li>
+            <li><b>删除班级</b>：创建者（老师）可删除班级</li>
+          </ul>
+        </div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v2.3.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>班级广场</b>：老师可创建班级；学生/班委可申请加入</li>
+            <li><b>申请审批</b>：班委审批学生申请，老师审批所有申请</li>
+            <li><b>三级论坛</b>：本班 / 年级 / 公共 论坛切换</li>
+            <li><b>嵌套回复</b>：支持楼中楼</li>
+          </ul>
+        </div>
 
         <div class="changelog-entry">
           <div class="changelog-head">
@@ -49,43 +123,27 @@
             <span class="changelog-date">2026-10</span>
           </div>
           <ul class="changelog-list">
-            <li><b>活动统计</b>：新增时间投票（When2meet 风格网格），管理员发布时段，同学点击/拖动选择空闲时间，颜色深浅显示人数</li>
-            <li><b>接龙功能</b>：一键参与/取消，支持截止时间、人数上限、备注，班委可一键复制名单</li>
-            <li><b>个人日程</b>：在"个人管理"中添加日程与 DDL，仅本人可见</li>
-            <li><b>首页提醒</b>：DDL 按截止临近程度变色（逾期深红、今天红、3 天橙、7 天黄），点击"已完成"从首页消失</li>
+            <li><b>活动统计</b>：时间投票（When2meet 风格网格）+ 接龙</li>
+            <li><b>个人日程</b>：日程 + DDL，首页红点提醒</li>
             <li><b>顶栏导航</b>：新增"活动统计"和"个人管理"入口</li>
-          </ul>
-        </div>
-
-        <div class="changelog-entry">
-          <div class="changelog-head">
-            <span class="changelog-version">v1.0.0</span>
-            <span class="changelog-date">2026-10</span>
-          </div>
-          <ul class="changelog-list">
-            <li><b>账号系统</b>：邮箱注册/登录，双角色（同学 / 管理员），通过邀请码区分</li>
-            <li><b>班级事务</b>：三种视图（时间轴 / 时间表 / 列表），管理员可编辑，普通同学只读</li>
-            <li><b>班级论坛</b>：发帖 / 回复 / 点赞 / 实时同步，支持删帖（管理员可删所有）</li>
-            <li><b>班级文件</b>：拖拽上传，全班可看，管理员可上传/删除</li>
-            <li><b>个人中心</b>：更换头像、修改昵称、修改密码、注销账号</li>
-            <li><b>用户管理</b>：管理员可查看本班成员、重置忘记密码同学的密码</li>
-            <li><b>界面重构</b>：全新 UI，清华紫主题，响应式设计</li>
           </ul>
         </div>
 
         <div class="changelog-entry changelog-old">
           <div class="changelog-head">
-            <span class="changelog-version">v0.x</span>
-            <span class="changelog-date">早期版本</span>
+            <span class="changelog-version">v1.0.0</span>
+            <span class="changelog-date">2026-10</span>
           </div>
           <ul class="changelog-list">
-            <li>基础的班级事务管理（密码门禁）</li>
-            <li>三种视图：时间轴 / 时间表 / 列表</li>
-            <li>本地 + Supabase 双存储</li>
+            <li><b>账号系统</b>：邮箱注册/登录，三类身份（学生 / 班委 / 老师）</li>
+            <li><b>班级事务</b>：三种视图（时间轴 / 时间表 / 列表），管理员可编辑</li>
+            <li><b>班级论坛</b>：发帖 / 回复 / 点赞 / 实时同步</li>
+            <li><b>班级文件</b>：拖拽上传，全班可看</li>
+            <li><b>个人中心</b>：头像 / 昵称 / 密码 / 注销</li>
+            <li><b>用户管理</b>：管理员可查看成员、重置密码、修改身份</li>
           </ul>
         </div>
       </div>
-
     </section>
   </main>
 
@@ -94,11 +152,38 @@
     <p class="footer-note">非官方系统 · 仅供班级内部使用</p>
   </footer>
 
+  <!-- 公告编辑弹窗 -->
+  <div id="ann-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 520px;">
+      <h3 id="ann-modal-title">发布公告</h3>
+      <div class="form-grid">
+        <label>标题</label>
+        <input type="text" id="ann-f-title" placeholder="如：本周班会通知" maxlength="50" />
+        <label>内容</label>
+        <textarea id="ann-f-content" placeholder="公告内容（支持换行）" maxlength="1000"
+                  style="padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;min-height:100px;outline:none;"></textarea>
+        <label>置顶</label>
+        <div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="ann-f-pinned" />
+            <span>发布后置顶到首页最上方</span>
+          </label>
+        </div>
+      </div>
+      <p id="ann-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="ann-save" class="btn btn-primary">保存</button>
+        <button id="ann-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/config.js"></script>
   <script src="js/common.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
   <script>
     (function () {
       const U = window.Utils;
@@ -120,8 +205,10 @@
       window.addEventListener('user-ready', async () => {
         loadMySchedule();
         loadAnnouncements();
+        loadAnnouncementsBoard();
       });
 
+      /* ============ 日程 / DDL ============ */
       async function loadMySchedule() {
         const block = document.getElementById('home-schedule-block');
         const listEl = document.getElementById('home-schedule-list');
@@ -226,9 +313,173 @@
         });
       }
 
+      /* ============ 公告 ============ */
+      async function loadAnnouncementsBoard() {
+        const listEl = document.getElementById('announce-list');
+        const newBtn = document.getElementById('new-ann-btn');
+
+        if (!window.currentClassId) {
+          listEl.innerHTML = '<div class="announce-empty">你还没有加入班级</div>';
+          return;
+        }
+
+        const isAdmin = U.isAdminRole(window.currentUser.role);
+
+        // 关键：管理员总是显示"发布"按钮
+        if (isAdmin) {
+          newBtn.style.display = '';
+          if (!newBtn._bound) {
+            newBtn._bound = true;
+            newBtn.addEventListener('click', () => openAnnounceModal(null));
+          }
+        } else {
+          newBtn.style.display = 'none';
+        }
+
+        const { data, error } = await db
+          .from('announcements')
+          .select('*')
+          .eq('class_id', window.currentClassId)
+          .order('pinned', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        if (error) {
+          listEl.innerHTML = '<div class="announce-empty">加载失败</div>';
+          return;
+        }
+
+        if (!data || !data.length) {
+          listEl.innerHTML = '<div class="announce-empty">还没有公告' +
+            (isAdmin ? '，点右上角"发布公告"发第一条吧' : '') + '</div>';
+          return;
+        }
+
+        listEl.innerHTML = data.map(a => renderAnnounceItem(a)).join('');
+        bindAnnounceActions(data);
+      }
+
+      function renderAnnounceItem(a) {
+        const isAdmin = window.Utils.isAdminRole(window.currentUser.role);
+        const pinnedTag = a.pinned ? '<span class="ann-pinned-tag">📌 置顶</span>' : '';
+        const adminBtns = isAdmin ? `
+          <div class="ann-admin-btns">
+            <button class="ann-btn" data-ann-pin="${a.id}" data-pinned="${a.pinned ? '1' : '0'}" title="${a.pinned ? '取消置顶' : '置顶'}">${a.pinned ? '📍' : '📌'}</button>
+            <button class="ann-btn" data-ann-edit="${a.id}" title="编辑">✏️</button>
+            <button class="ann-btn ann-btn-danger" data-ann-del="${a.id}" title="删除">🗑️</button>
+          </div>` : '';
+        return `
+          <div class="ann-item${a.pinned ? ' ann-item-pinned' : ''}">
+            <div class="ann-head">
+              <div class="ann-title">
+                ${pinnedTag} ${U.escapeHtml(a.title)}
+              </div>
+              ${adminBtns}
+            </div>
+            <div class="ann-content">${U.escapeHtml(a.content).replace(/\n/g, '<br>')}</div>
+            <div class="ann-meta">${U.escapeHtml(a.creator_name)} · ${U.formatTime(a.created_at)}</div>
+          </div>`;
+      }
+
+      function bindAnnounceActions(data) {
+        document.querySelectorAll('[data-ann-del]').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!confirm('确定删除这条公告？')) return;
+            await db.from('announcements').delete().eq('id', btn.dataset.annDel);
+            loadAnnouncementsBoard();
+          });
+        });
+        document.querySelectorAll('[data-ann-pin]').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.annPin;
+            const cur = btn.dataset.pinned === '1';
+            await db.from('announcements').update({ pinned: !cur }).eq('id', id);
+            loadAnnouncementsBoard();
+          });
+        });
+        document.querySelectorAll('[data-ann-edit]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.annEdit;
+            const ann = data.find(x => String(x.id) === id);
+            if (ann) openAnnounceModal(ann);
+          });
+        });
+      }
+
+      function openAnnounceModal(ann) {
+        const modal = document.getElementById('ann-modal');
+        document.getElementById('ann-modal-title').textContent = ann ? '编辑公告' : '发布公告';
+        document.getElementById('ann-f-title').value = ann ? ann.title : '';
+        document.getElementById('ann-f-content').value = ann ? ann.content : '';
+        document.getElementById('ann-f-pinned').checked = ann ? !!ann.pinned : false;
+        document.getElementById('ann-msg').textContent = '';
+        modal.style.display = 'flex';
+        modal.dataset.editingId = ann ? ann.id : '';
+        setTimeout(() => document.getElementById('ann-f-title').focus(), 100);
+      }
+
+      document.getElementById('ann-cancel').addEventListener('click', () => {
+        document.getElementById('ann-modal').style.display = 'none';
+      });
+      document.getElementById('ann-modal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+      });
+      document.getElementById('ann-save').addEventListener('click', async () => {
+        const modal = document.getElementById('ann-modal');
+        const editingId = modal.dataset.editingId;
+        const title = document.getElementById('ann-f-title').value.trim();
+        const content = document.getElementById('ann-f-content').value.trim();
+        const pinned = document.getElementById('ann-f-pinned').checked;
+        const msgEl = document.getElementById('ann-msg');
+        const saveBtn = document.getElementById('ann-save');
+
+        if (!title || !content) {
+          msgEl.textContent = '请填写标题和内容';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中…';
+
+        try {
+          if (editingId) {
+            const { error } = await db.from('announcements')
+              .update({ title, content, pinned, updated_at: new Date().toISOString() })
+              .eq('id', editingId);
+            if (error) throw error;
+          } else {
+            const { error } = await db.from('announcements').insert({
+              class_id: window.currentClassId,
+              title, content, pinned,
+              creator_id: window.currentUser.id,
+              creator_name: window.currentUser.nickname
+            });
+            if (error) throw error;
+          }
+          modal.style.display = 'none';
+          loadAnnouncementsBoard();
+        } catch (e) {
+          msgEl.textContent = e.message || '保存失败';
+          msgEl.className = 'form-msg error';
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = '保存';
+        }
+      });
+
+      /* ============ 班级事务公告板 ============ */
       async function loadAnnouncements() {
         const list = document.getElementById('announcement-list');
         const classId = window.currentClassId;
+
+        if (!classId) {
+          list.innerHTML = '<div class="announcement-empty">你还没有加入班级</div>';
+          return;
+        }
 
         const { data, error } = await db
           .from('class_activities')

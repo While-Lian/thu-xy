@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班级相册</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>📸 班级相册</h1>
+      <p class="page-desc">记录班级的精彩瞬间</p>
+    </header>
+
+    <section class="block">
+      <div id="photo-drop" class="drop-zone">
+        <div class="drop-zone-inner">
+          <div class="drop-icon">🖼️</div>
+          <div class="drop-text">把照片拖到这里，或</div>
+          <button id="photo-upload-btn" class="btn btn-primary">＋ 上传照片</button>
+          <input type="file" id="photo-input" accept="image/*" hidden />
+          <div class="drop-hint">支持多张，每张不超过 10MB</div>
+        </div>
+      </div>
+
+      <div id="photo-grid" class="photo-grid">
+        <div class="photo-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 班级相册</p>
+  </footer>
+
+  <!-- 图片预览弹窗 -->
+  <div id="photo-viewer" class="photo-viewer" style="display:none;">
+    <button class="photo-viewer-close" id="photo-viewer-close">×</button>
+    <img id="photo-viewer-img" src="" alt="" />
+    <div class="photo-viewer-info">
+      <div id="photo-viewer-caption"></div>
+      <div id="photo-viewer-meta"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/photos.js"></script>
+</body>
+</html>

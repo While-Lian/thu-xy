@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>申请审批</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>申请审批</h1>
+      <p class="page-desc">审批加入本班的申请</p>
+    </header>
+
+    <section class="block">
+      <h2 class="block-title">⏳ 待审批</h2>
+      <div id="pending-list" class="request-list">
+        <div class="request-empty">加载中…</div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2 class="block-title">📋 历史记录</h2>
+      <div id="history-list" class="request-list">
+        <div class="request-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 申请审批</p>
+  </footer>
+
+  <!-- 拒绝弹窗 -->
+  <div id="reject-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 440px;">
+      <h3>拒绝申请</h3>
+      <p style="color:#666;font-size:13px;margin-bottom:12px;">
+        拒绝「<b id="reject-user-name" style="color:#660874;">—</b>」的加入申请
+      </p>
+      <div class="form-stack" style="max-width:100%;">
+        <input type="text" id="reject-reason" placeholder="拒绝理由（选填）" maxlength="100" />
+      </div>
+      <p id="reject-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="reject-cancel" class="btn btn-ghost">取消</button>
+        <button id="reject-confirm" class="btn btn-danger">确认拒绝</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/requests.js"></script>
+  <script src="js/notifications.js"></script>
+</body>
+</html>

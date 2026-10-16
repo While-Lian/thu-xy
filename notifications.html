@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>通知中心</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>通知中心</h1>
+      <p class="page-desc">你的所有消息通知</p>
+    </header>
+
+    <section class="block">
+      <div class="block-header">
+        <div class="notif-tabs">
+          <button class="notif-tab active" data-tab="unread">未读</button>
+          <button class="notif-tab" data-tab="all">全部</button>
+        </div>
+        <div class="notif-actions">
+          <button id="mark-all-read" class="btn btn-ghost btn-small">全部标为已读</button>
+          <button id="clear-all" class="btn btn-danger btn-small">清空全部</button>
+        </div>
+      </div>
+
+      <div id="notif-list" class="notif-list">
+        <div class="notif-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 通知中心</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    (function () {
+      const db = window.supabaseClient;
+      const U = window.Utils;
+      let currentUser = null;
+      let allNotifs = [];
+      let activeTab = 'unread';
+
+      window.addEventListener('user-ready', (e) => {
+        currentUser = e.detail;
+        init();
+      });
+
+      function init() {
+        document.querySelectorAll('.notif-tab').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.notif-tab').forEach(b =>
+              b.classList.toggle('active', b === btn));
+            activeTab = btn.dataset.tab;
+            render();
+          });
+        });
+
+        document.getElementById('mark-all-read').addEventListener('click', async () => {
+          if (!confirm('把全部未读通知标为已读？')) return;
+          await window.NotificationsAPI.markAllRead();
+          await load();
+        });
+
+        document.getElementById('clear-all').addEventListener('click', async () => {
+          if (!confirm('清空所有通知？此操作不可恢复。')) return;
+          await window.NotificationsAPI.deleteAll();
+          await load();
+        });
+
+        load();
+
+        // 实时刷新
+        db.channel('notif-page-' + currentUser.id)
+          .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'notifications',
+              filter: `user_id=eq.${currentUser.id}` },
+            () => load())
+          .subscribe();
+      }
+
+      async function load() {
+        const { data, error } = await db
+          .from('notifications')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        if (error) {
+          document.getElementById('notif-list').innerHTML =
+            '<div class="notif-empty">加载失败</div>';
+          return;
+        }
+        allNotifs = data || [];
+        render();
+      }
+
+      function render() {
+        const list = document.getElementById('notif-list');
+        const filtered = activeTab === 'unread'
+          ? allNotifs.filter(n => !n.is_read)
+          : allNotifs;
+
+        if (!filtered.length) {
+          list.innerHTML = activeTab === 'unread'
+            ? '<div class="notif-empty">没有未读通知 🎉</div>'
+            : '<div class="notif-empty">还没有通知</div>';
+          return;
+        }
+
+        list.innerHTML = filtered.map(n => renderItem(n)).join('');
+
+        list.querySelectorAll('[data-open]').forEach(el => {
+          el.addEventListener('click', async () => {
+            const id = el.dataset.open;
+            const n = allNotifs.find(x => String(x.id) === String(id));
+            await window.NotificationsAPI.markRead(id);
+            if (n && n.link) location.href = n.link;
+            else load();
+          });
+        });
+
+        list.querySelectorAll('[data-del]').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await window.NotificationsAPI.deleteOne(btn.dataset.del);
+            await load();
+          });
+        });
+      }
+
+      function renderItem(n) {
+        const icon = typeIcon(n.type);
+        const unreadCls = n.is_read ? '' : ' notif-unread';
+        return `
+          <div class="notif-item${unreadCls}" data-open="${n.id}">
+            <div class="notif-icon">${icon}</div>
+            <div class="notif-body">
+              <div class="notif-title">${U.escapeHtml(n.title)}</div>
+              ${n.body ? `<div class="notif-desc">${U.escapeHtml(n.body)}</div>` : ''}
+              <div class="notif-time">${U.formatTime(n.created_at)}</div>
+            </div>
+            <button class="notif-del" data-del="${n.id}" title="删除">×</button>
+          </div>`;
+      }
+
+      function typeIcon(type) {
+        return {
+          join_request: '📨',
+          join_approved: '🎉',
+          join_rejected: '❌',
+          mention: '💬'
+        }[type] || '🔔';
+      }
+    })();
+  </script>
+</body>
+</html>

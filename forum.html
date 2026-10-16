@@ -12,34 +12,85 @@
   <main class="page-main">
     <section class="forum-section">
       <div class="forum-header">
-        <h2>💬 <span id="forum-class-name">班级</span>论坛</h2>
+        <h2>💬 论坛</h2>
         <span id="forum-status" class="forum-status"></span>
       </div>
 
+      <!-- 三级 tab -->
+      <div class="scope-tabs">
+        <button class="scope-tab active" data-scope="class">🏫 本班</button>
+        <button class="scope-tab" data-scope="grade">🎓 年级</button>
+        <button class="scope-tab" data-scope="public">🌐 公共</button>
+      </div>
+
+      <!-- 搜索 -->
+      <div class="forum-search-bar">
+        <input type="text" id="forum-search" class="forum-search-input" placeholder="🔍 搜索帖子内容或作者…" />
+      </div>
+
+      <!-- 发帖区 -->
       <div class="post-form">
-        <textarea id="post-content" placeholder="说点什么吧……（Ctrl+Enter 快速发布）"
-                  maxlength="500" rows="3" class="post-content-input"></textarea>
+        <div class="post-form-top">
+          <label class="post-scope-label">发布到：</label>
+          <select id="post-scope" class="post-scope-select">
+            <option value="class">本班</option>
+            <option value="grade">年级</option>
+            <option value="public">公共</option>
+          </select>
+          <span id="post-scope-hint" class="post-scope-hint"></span>
+        </div>
+
+        <div class="post-input-wrap">
+          <textarea id="post-content" placeholder="说点什么吧……（Ctrl+Enter 快速发布，输入 @ 可提及同学）"
+                    maxlength="500" rows="3" class="post-content-input"></textarea>
+          <div id="mention-popup" class="mention-popup" style="display:none;"></div>
+        </div>
+
+        <div id="post-image-preview" class="post-image-preview"></div>
+
         <div class="post-form-footer">
-          <span id="post-char-count" class="char-count">0 / 500</span>
-          <button id="post-submit" class="btn-primary">发布</button>
+          <div class="post-form-tools">
+            <label class="post-tool-btn" title="添加图片">
+              🖼️
+              <input type="file" id="post-image-input" accept="image/*" multiple hidden />
+            </label>
+            <span class="post-tool-hint">最多 9 张，每张 ≤5MB</span>
+          </div>
+          <div class="post-form-right">
+            <span id="post-char-count" class="char-count">0 / 500</span>
+            <button id="post-submit" class="btn-primary">发布</button>
+          </div>
         </div>
       </div>
 
       <div id="post-list" class="post-list">
         <div class="post-empty">加载中…</div>
       </div>
+
+      <div id="load-more-wrap" class="load-more-wrap" style="display:none;">
+        <button id="load-more-btn" class="btn btn-ghost load-more-btn">加载更多</button>
+        <div id="no-more-hint" class="no-more-hint" style="display:none;">— 没有更多了 —</div>
+      </div>
     </section>
   </main>
 
+  
   <footer class="site-footer">
-    <p>THU-XY · 班级论坛</p>
+    <p>THU-XY · 论坛</p>
   </footer>
+
+  <!-- 图片查看器 -->
+  <div id="image-viewer" class="image-viewer" style="display:none;">
+    <button class="image-viewer-close" id="image-viewer-close">×</button>
+    <img id="image-viewer-img" src="" alt="" />
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/config.js"></script>
   <script src="js/common.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
   <script src="js/forum.js"></script>
 </body>
 </html>

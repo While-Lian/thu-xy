@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班级广场</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>班级广场</h1>
+      <p class="page-desc">加入或创建一个班级</p>
+    </header>
+
+    <!-- 未加入班级提示 -->
+    <section class="block notice-block" id="no-class-notice" style="display:none;">
+      <div class="notice-inner">
+        <span class="notice-icon">👋</span>
+        <div>
+          <div class="notice-title">你还没有加入任何班级</div>
+          <div class="notice-desc">浏览下方班级列表，申请加入，或（老师）创建新班级</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 我的申请 -->
+    <section class="block" id="my-requests-block" style="display:none;">
+      <h2 class="block-title">📨 我的申请</h2>
+      <div id="my-requests-list" class="request-list"></div>
+    </section>
+
+    <!-- 班级列表 -->
+    <section class="block">
+      <div class="block-header">
+        <h2 class="block-title">🏫 所有班级</h2>
+        <button id="create-class-btn" class="btn btn-primary btn-small" style="display:none;">＋ 创建班级</button>
+      </div>
+      <div id="classes-list" class="class-list">
+        <div class="class-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 班级广场</p>
+  </footer>
+
+  <!-- 创建班级弹窗 -->
+  <div id="create-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 480px;">
+      <h3>创建新班级</h3>
+      <div class="form-grid">
+        <label>班级 ID</label>
+        <input type="text" id="create-id" placeholder="如 xingjian-temp1（小写字母/数字/连字符）" maxlength="30" />
+        <label>班级名</label>
+        <input type="text" id="create-name" placeholder="如 行健63班" maxlength="20" />
+        <label>年级</label>
+        <input type="text" id="create-grade" placeholder="如 xingjian2026" maxlength="30" />
+        <label>简介</label>
+        <input type="text" id="create-desc" placeholder="选填" maxlength="100" />
+      </div>
+      <p id="create-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="create-save" class="btn btn-primary">创建</button>
+        <button id="create-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 申请加入弹窗 -->
+  <div id="apply-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 480px;">
+      <h3>申请加入 <span id="apply-class-name" style="color:#660874;"></span></h3>
+      <div class="form-grid">
+        <label>申请身份</label>
+        <select id="apply-role">
+          <option value="student">学生</option>
+          <option value="committee">班委</option>
+          <option value="teacher">老师 / 辅导员</option>
+        </select>
+        <label>申请理由</label>
+        <input type="text" id="apply-message" placeholder="选填，如：我是行健63班的张三" maxlength="100" />
+      </div>
+      <p style="color:#999;font-size:12px;margin-top:8px;">
+        ⚠️ 班委和老师身份需要老师审批，学生身份由班委或老师审批
+      </p>
+      <p id="apply-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="apply-save" class="btn btn-primary">提交申请</button>
+        <button id="apply-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除班级确认弹窗 -->
+  <div id="delete-class-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 460px;">
+      <h3 style="color:#e53935;">⚠️ 删除班级</h3>
+      <p style="color:#666;font-size:13px;line-height:1.7;margin-bottom:16px;">
+        你即将删除班级 <b id="delete-class-name" style="color:#e53935;">—</b>。<br /><br />
+        此操作<b style="color:#e53935;">不可恢复</b>，该班级的所有帖子、文件、活动、投票等数据都会被永久删除。<br /><br />
+        请输入班级名以确认：
+      </p>
+      <input type="text" id="delete-class-confirm-input" placeholder="输入班级名以确认"
+             style="width: 100%; padding: 10px 14px; border: 1px solid #ebe5ef;
+                    border-radius: 8px; font-size: 14px; outline: none; font-family: inherit;" />
+      <p id="delete-class-msg" class="form-msg" style="margin-top: 10px;"></p>
+      <div class="modal-buttons">
+        <button id="delete-class-cancel" class="btn btn-ghost">取消</button>
+        <button id="delete-class-confirm" class="btn btn-danger">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/classes.js"></script>
+</body>
+</html>
