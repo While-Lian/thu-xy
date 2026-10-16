@@ -1,4 +1,4 @@
-/* 个人中心 v2.4.0 */
+/* 个人中心 v3.2.1 */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -68,29 +68,36 @@
       avatarBtn.textContent = '上传中…';
 
       try {
+        // 1. 上传到 Storage
         const { error: upErr } = await db.storage
-          .from('avatars').upload(path, file, { upsert: true });
+          .from('avatars')
+          .upload(path, file, { upsert: true });
         if (upErr) throw upErr;
 
+        // 2. 拿公共 URL
         const { data: urlData } = db.storage.from('avatars').getPublicUrl(path);
         const url = urlData.publicUrl;
 
+        // 3. 更新 profiles
         const { error: dbErr } = await db.from('profiles')
-          .update({ avatar_url: url }).eq('id', currentUser.id);
+          .update({ avatar_url: url })
+          .eq('id', currentUser.id);
         if (dbErr) throw dbErr;
 
+        // 4. 更新本地状态
         currentUser.avatar_url = url;
         window.currentUser.avatar_url = url;
         renderAvatar();
         if (window.Topbar) window.Topbar.render();
       } catch (err) {
-        alert('上传失败：' + err.message);
+        alert('上传失败：' + (err.message || err));
       } finally {
         avatarBtn.disabled = false;
         avatarBtn.textContent = '更换头像';
       }
     }
 
+    /* ---------- 修改昵称 ---------- */
     document.getElementById('save-nickname').addEventListener('click', async () => {
       const v = document.getElementById('nickname-input').value.trim();
       if (!v) return alert('昵称不能为空');
@@ -107,6 +114,7 @@
       }
     });
 
+    /* ---------- 修改密码 ---------- */
     document.getElementById('save-password').addEventListener('click', async () => {
       const oldP = document.getElementById('pwd-old').value;
       const newP = document.getElementById('pwd-new').value;
@@ -201,7 +209,7 @@
         });
         if (signErr) throw new Error('密码错误');
 
-        const { error: delErr } = await db.rpc('delete_own_account');
+        const { delErr } = await db.rpc('delete_own_account');
         if (delErr) throw delErr;
 
         await db.auth.signOut();
