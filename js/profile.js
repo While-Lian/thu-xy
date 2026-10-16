@@ -73,7 +73,7 @@
         if (upErr) throw upErr;
 
         const { data: urlData } = db.storage.from('avatars').getPublicUrl(path);
-        const url = data.urlData ? data.urlData.publicUrl : urlData.publicUrl;
+        const url = urlData.publicUrl;
 
         const { error: dbErr } = await db.from('profiles')
           .update({ avatar_url: url }).eq('id', currentUser.id);
