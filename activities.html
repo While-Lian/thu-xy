@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>活动统计</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>活动统计</h1>
+      <p class="page-desc">投票选时间，接龙看意愿</p>
+    </header>
+
+    <section class="block">
+      <div class="block-header">
+        <div class="pe-tabs">
+          <button class="pe-tab active" data-tab="poll">📊 时间投票</button>
+          <button class="pe-tab" data-tab="chain">🔗 接龙</button>
+        </div>
+        <button id="act-add-btn" class="btn btn-primary btn-small admin-only">＋ 发起时间投票</button>
+      </div>
+
+      <div id="act-list" class="act-list">
+        <div class="act-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 活动统计</p>
+  </footer>
+
+  <!-- ========== 时间投票弹窗 ========== -->
+  <div id="poll-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 600px;">
+      <h3 id="poll-modal-title">发起时间投票</h3>
+      <div class="form-grid">
+        <label>标题</label>
+        <input type="text" id="poll-f-title" placeholder="如：周末团建时间" maxlength="50" />
+
+        <label>说明</label>
+        <input type="text" id="poll-f-desc" placeholder="选填，如：请大家勾选有空的时间" maxlength="200" />
+
+        <label>选择日期</label>
+        <div>
+          <div id="poll-days" class="day-chips">
+            <button type="button" class="day-chip" data-day="1">周一</button>
+            <button type="button" class="day-chip" data-day="2">周二</button>
+            <button type="button" class="day-chip" data-day="3">周三</button>
+            <button type="button" class="day-chip" data-day="4">周四</button>
+            <button type="button" class="day-chip" data-day="5">周五</button>
+            <button type="button" class="day-chip" data-day="6">周六</button>
+            <button type="button" class="day-chip" data-day="0">周日</button>
+          </div>
+          <div class="helper-tip" style="margin-top:6px;">点击选择要在投票中出现哪几天</div>
+        </div>
+
+        <label>时间范围</label>
+        <div class="hour-range">
+          <select id="poll-start-hour">
+            <option value="6">6:00</option>
+            <option value="7">7:00</option>
+            <option value="8" selected>8:00</option>
+            <option value="9">9:00</option>
+            <option value="10">10:00</option>
+            <option value="11">11:00</option>
+            <option value="12">12:00</option>
+          </select>
+          <span class="hour-range-sep">至</span>
+          <select id="poll-end-hour">
+            <option value="18">18:00</option>
+            <option value="20">20:00</option>
+            <option value="21">21:00</option>
+            <option value="22">22:00</option>
+            <option value="23" selected>23:00</option>
+            <option value="24">24:00</option>
+          </select>
+          <span class="helper-tip">（含起始，不含结束）</span>
+        </div>
+
+        <label>截止时间</label>
+        <input type="datetime-local" id="poll-f-deadline" />
+      </div>
+      <p id="poll-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="poll-save" class="btn btn-primary">发布</button>
+        <button id="poll-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 接龙弹窗 ========== -->
+  <div id="chain-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 520px;">
+      <h3 id="chain-modal-title">发起接龙</h3>
+      <div class="form-grid">
+        <label>标题</label>
+        <input type="text" id="chain-f-title" placeholder="如：周末聚餐报名" maxlength="50" />
+
+        <label>说明</label>
+        <input type="text" id="chain-f-desc" placeholder="选填，如：地点待定，AA 制" maxlength="200" />
+
+        <label>截止时间</label>
+        <input type="datetime-local" id="chain-f-deadline" />
+
+        <label>人数上限</label>
+        <input type="number" id="chain-f-max" placeholder="选填，留空不限制" min="1" />
+
+        <label>需要备注</label>
+        <div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="chain-f-needremark" />
+            <span>参与时需要填写备注（如：带几个人、从哪里出发）</span>
+          </label>
+        </div>
+
+        <label>备注名称</label>
+        <input type="text" id="chain-f-remarklabel" placeholder="如：备注 / 携带人数 / 出发地点" value="备注" maxlength="10" />
+      </div>
+      <p id="chain-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="chain-save" class="btn btn-primary">发布</button>
+        <button id="chain-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 参与接龙弹窗 ========== -->
+  <div id="join-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 420px;">
+      <h3>参与接龙</h3>
+      <p id="join-chain-title" style="color:#666;font-size:13px;margin-bottom:14px;"></p>
+      <div class="form-stack" style="max-width:100%;">
+        <label id="join-remark-label" style="font-size:13px;color:#666;">备注</label>
+        <input type="text" id="join-remark" placeholder="选填" maxlength="50" />
+      </div>
+      <p id="join-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="join-confirm" class="btn btn-primary">确认参与</button>
+        <button id="join-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/polls.js"></script>
+</body>
+</html>
