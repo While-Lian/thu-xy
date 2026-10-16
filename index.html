@@ -38,6 +38,54 @@
         <span class="about-label">开发者：</span>
         <span id="about-devs-list"></span>
       </div>
+
+      <!-- ========== 更新日志 ========== -->
+      <div class="changelog">
+        <div class="changelog-title">📝 更新日志</div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v2.0.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>活动统计</b>：新增时间投票（When2meet 风格网格），管理员发布时段，同学点击/拖动选择空闲时间，颜色深浅显示人数</li>
+            <li><b>接龙功能</b>：一键参与/取消，支持截止时间、人数上限、备注，班委可一键复制名单</li>
+            <li><b>个人日程</b>：在"个人管理"中添加日程与 DDL，仅本人可见</li>
+            <li><b>首页提醒</b>：DDL 按截止临近程度变色（逾期深红、今天红、3 天橙、7 天黄），点击"已完成"从首页消失</li>
+            <li><b>顶栏导航</b>：新增"活动统计"和"个人管理"入口</li>
+          </ul>
+        </div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v1.0.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>账号系统</b>：邮箱注册/登录，双角色（同学 / 管理员），通过邀请码区分</li>
+            <li><b>班级事务</b>：三种视图（时间轴 / 时间表 / 列表），管理员可编辑，普通同学只读</li>
+            <li><b>班级论坛</b>：发帖 / 回复 / 点赞 / 实时同步，支持删帖（管理员可删所有）</li>
+            <li><b>班级文件</b>：拖拽上传，全班可看，管理员可上传/删除</li>
+            <li><b>个人中心</b>：更换头像、修改昵称、修改密码、注销账号</li>
+            <li><b>用户管理</b>：管理员可查看本班成员、重置忘记密码同学的密码</li>
+            <li><b>界面重构</b>：全新 UI，清华紫主题，响应式设计</li>
+          </ul>
+        </div>
+
+        <div class="changelog-entry changelog-old">
+          <div class="changelog-head">
+            <span class="changelog-version">v0.x</span>
+            <span class="changelog-date">早期版本</span>
+          </div>
+          <ul class="changelog-list">
+            <li>基础的班级事务管理（密码门禁）</li>
+            <li>三种视图：时间轴 / 时间表 / 列表</li>
+            <li>本地 + Supabase 双存储</li>
+          </ul>
+        </div>
+      </div>
+
     </section>
   </main>
 
@@ -70,10 +118,7 @@
       }
 
       window.addEventListener('user-ready', async () => {
-        /* ---- 1. 首页个人日程 / DDL 提醒 ---- */
         loadMySchedule();
-
-        /* ---- 2. 班级公告板 ---- */
         loadAnnouncements();
       });
 
@@ -95,11 +140,9 @@
         inSevenDays.setDate(inSevenDays.getDate() + 7);
         const sevenStr = `${inSevenDays.getFullYear()}-${String(inSevenDays.getMonth() + 1).padStart(2, '0')}-${String(inSevenDays.getDate()).padStart(2, '0')}`;
 
-        // 未来 7 天日程
         const upcomingEvents = data.filter(i =>
           i.type === 'event' && i.event_date >= today && i.event_date <= sevenStr
         );
-        // 未完成 DDL（全部显示，按日期）
         const undoneDdls = data.filter(i => i.type === 'ddl' && !i.completed)
           .sort((a, b) => a.event_date.localeCompare(b.event_date));
 
@@ -111,7 +154,6 @@
         block.style.display = 'block';
         let html = '';
 
-        // DDL 部分（更重要，放前面）
         if (undoneDdls.length) {
           html += '<div class="home-section-title">📌 DDL 待办</div>';
           html += '<div class="home-ddl-list">';
@@ -142,7 +184,6 @@
           html += '</div>';
         }
 
-        // 日程部分
         if (upcomingEvents.length) {
           html += '<div class="home-section-title" style="margin-top:18px;">📅 未来 7 天日程</div>';
           html += '<div class="home-event-list">';
@@ -170,7 +211,6 @@
 
         listEl.innerHTML = html;
 
-        // 绑定"已完成"按钮
         listEl.querySelectorAll('[data-done]').forEach(btn => {
           btn.addEventListener('click', async () => {
             btn.disabled = true;
@@ -181,7 +221,7 @@
               btn.disabled = false;
               return;
             }
-            loadMySchedule(); // 刷新
+            loadMySchedule();
           });
         });
       }
