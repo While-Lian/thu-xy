@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班级论坛</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <section class="forum-section">
+      <div class="forum-header">
+        <h2>💬 <span id="forum-class-name">班级</span>论坛</h2>
+        <span id="forum-status" class="forum-status"></span>
+      </div>
+
+      <div class="post-form">
+        <textarea id="post-content" placeholder="说点什么吧……（Ctrl+Enter 快速发布）"
+                  maxlength="500" rows="3" class="post-content-input"></textarea>
+        <div class="post-form-footer">
+          <span id="post-char-count" class="char-count">0 / 500</span>
+          <button id="post-submit" class="btn-primary">发布</button>
+        </div>
+      </div>
+
+      <div id="post-list" class="post-list">
+        <div class="post-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 班级论坛</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/forum.js"></script>
+</body>
+</html>

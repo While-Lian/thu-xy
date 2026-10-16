@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班级文件</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>📁 班级文件</h1>
+      <p class="page-desc">共享班级文档、资料、照片等文件</p>
+    </header>
+
+    <section class="block">
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-inner">
+          <div class="drop-icon">⬆️</div>
+          <div class="drop-text">把文件拖到这里，或</div>
+          <button id="file-upload-btn" class="btn btn-primary">＋ 上传文件</button>
+          <input type="file" id="file-input" hidden />
+          <div class="drop-hint">单个文件不超过 50MB</div>
+        </div>
+      </div>
+
+      <div id="file-list" class="file-list">
+        <div class="file-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 班级文件</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/files.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户管理</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>用户管理</h1>
+      <p class="page-desc">管理本班成员账号，可以为忘记密码的同学重置密码</p>
+    </header>
+
+    <section class="block">
+      <h2 class="block-title">本班成员</h2>
+      <div id="member-list" class="member-list">
+        <div class="member-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 用户管理</p>
+  </footer>
+
+  <!-- 重置密码弹窗 -->
+  <div id="reset-modal" class="modal" style="display: none;">
+    <div class="modal-box" style="width: 440px;">
+      <h3>重置密码</h3>
+      <p style="color:#666;font-size:13px;line-height:1.7;margin-bottom:14px;">
+        为用户 <b id="reset-target-name" style="color:#660874;">—</b> 设置新密码。
+        重置后请通知对方尽快登录并修改密码。
+      </p>
+      <div class="form-stack" style="max-width:100%;">
+        <input type="password" id="reset-pwd1" placeholder="新密码（至少 6 位）" />
+        <input type="password" id="reset-pwd2" placeholder="确认新密码" />
+      </div>
+      <p id="reset-msg" class="form-msg" style="margin-top:10px;"></p>
+      <div class="modal-buttons">
+        <button id="reset-cancel" class="btn btn-ghost">取消</button>
+        <button id="reset-confirm" class="btn btn-primary">确认重置</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

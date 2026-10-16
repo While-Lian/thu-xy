@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>个人中心</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>个人中心</h1>
+    </header>
+
+    <section class="block profile-block">
+      <div class="profile-avatar-section">
+        <div id="avatar-preview" class="avatar-preview">头</div>
+        <input type="file" id="avatar-input" accept="image/*" hidden />
+        <button id="avatar-change-btn" class="btn btn-primary btn-small">更换头像</button>
+      </div>
+
+      <div class="profile-info">
+        <div class="profile-row">
+          <span class="profile-label">昵称</span>
+          <span id="profile-nickname" class="profile-value"></span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-label">邮箱</span>
+          <span id="profile-email" class="profile-value"></span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-label">班级</span>
+          <span id="profile-class" class="profile-value"></span>
+        </div>
+        <div class="profile-row">
+          <span class="profile-label">身份</span>
+          <span id="profile-role" class="profile-value"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2 class="block-title">修改昵称</h2>
+      <div class="form-inline">
+        <input type="text" id="nickname-input" placeholder="输入新昵称" maxlength="20" />
+        <button id="save-nickname" class="btn btn-primary">保存</button>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2 class="block-title">修改密码</h2>
+      <div class="form-stack">
+        <input type="password" id="pwd-old" placeholder="原密码" />
+        <input type="password" id="pwd-new" placeholder="新密码（至少 6 位）" />
+        <input type="password" id="pwd-new2" placeholder="确认新密码" />
+        <div class="form-inline-right">
+          <button id="save-password" class="btn btn-primary">修改密码</button>
+        </div>
+        <p id="pwd-msg" class="form-msg"></p>
+      </div>
+    </section>
+
+    <section class="block danger-zone">
+      <h2 class="block-title danger-title">危险区域</h2>
+      <div class="danger-row">
+        <div class="danger-info">
+          <div class="danger-title-text">注销账号</div>
+          <div class="danger-desc">
+            注销后，你的账号将被永久删除，无法恢复。<br />
+            你发布的帖子和回复会保留，但作者会显示为"已注销用户"。
+          </div>
+        </div>
+        <button id="delete-account-btn" class="btn btn-danger">注销账号</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 个人中心</p>
+  </footer>
+
+  <!-- 注销确认弹窗 -->
+  <div id="delete-modal" class="modal" style="display: none;">
+    <div class="modal-box" style="width: 440px;">
+      <h3 style="color: #e53935;">⚠️ 确认注销账号</h3>
+      <p style="color: #666; font-size: 13px; line-height: 1.7; margin-bottom: 16px;">
+        此操作<b style="color: #e53935;">不可恢复</b>。你的账号、头像、点赞记录将被永久删除。<br />
+        请输入密码以确认注销：
+      </p>
+      <input type="password" id="delete-password" placeholder="请输入当前密码"
+             style="width: 100%; padding: 10px 14px; border: 1px solid #ebe5ef;
+                    border-radius: 8px; font-size: 14px; outline: none; font-family: inherit;" />
+      <p id="delete-msg" class="form-msg" style="margin-top: 10px;"></p>
+      <div class="modal-buttons">
+        <button id="delete-cancel" class="btn btn-ghost">取消</button>
+        <button id="delete-confirm" class="btn btn-danger">确认注销</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

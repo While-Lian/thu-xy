@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 · 清华大学行健书院班级共建系统</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="login-body">
+
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="login-logo">清</div>
+      <h1>清华大学行健书院班级共建系统</h1>
+      <p class="login-brand-sub">THU Xingjian College · Class Co-building System</p>
+    </div>
+
+    <div class="login-card">
+      <!-- 登录 -->
+      <div id="login-view">
+        <h2 class="login-title">登 录</h2>
+        <form id="login-form" autocomplete="on">
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="email" id="login-email" placeholder="账户名 / 邮箱" required autocomplete="username" />
+          </div>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="login-password" placeholder="密码" required autocomplete="current-password" />
+          </div>
+          <button type="submit" class="btn-login">登 录</button>
+        </form>
+        <div class="login-options">
+          <a href="#" id="forgot-link">忘记密码？</a>
+          <a href="#" id="to-register">立即注册！</a>
+        </div>
+      </div>
+
+      <!-- 注册 -->
+      <div id="register-view" style="display:none;">
+        <h2 class="login-title">注 册</h2>
+        <form id="register-form">
+          <div class="input-wrap">
+            <span class="input-icon">✉️</span>
+            <input type="email" id="reg-email" placeholder="邮箱" required />
+          </div>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="reg-password" placeholder="密码（至少 6 位）" required minlength="6" />
+          </div>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="reg-nickname" placeholder="昵称" required maxlength="20" />
+          </div>
+          <div class="input-wrap">
+            <span class="input-icon">🏫</span>
+            <select id="reg-class" required>
+              <option value="">请选择班级</option>
+              <option value="xingjian63">行健63班</option>
+              <option value="xingjian-li6">行健-力6班</option>
+            </select>
+          </div>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="text" id="reg-admin-code" placeholder="管理员邀请码（选填，班委填）" />
+          </div>
+          <button type="submit" class="btn-login">注 册</button>
+        </form>
+        <div class="login-options">
+          <a href="#" id="to-login">已有账号？返回登录</a>
+        </div>
+      </div>
+
+      <!-- 忘记密码 -->
+      <div id="forgot-view" style="display:none;">
+        <h2 class="login-title">忘记密码</h2>
+        <p style="color:#666;font-size:14px;line-height:1.8;text-align:center;margin:16px 0 24px;">
+          请联系<b style="color:#660874;">班级管理员</b>协助重置密码。<br />
+          重置后请尽快登录并在「个人中心」修改为新密码。
+        </p>
+        <div class="login-options" style="justify-content:center;">
+          <a href="#" id="forgot-back">← 返回登录</a>
+        </div>
+      </div>
+
+      <p id="auth-msg" class="auth-msg"></p>
+    </div>
+
+    <p class="login-footer">Developed by 陈炼 · 徐天泽</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
