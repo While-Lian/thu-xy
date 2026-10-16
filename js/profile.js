@@ -1,4 +1,4 @@
-/* 个人中心 v1.0.1 */
+/* 个人中心 v2.4.0 */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -25,9 +25,20 @@
 
     nameEl.textContent = currentUser.nickname;
     emailEl.textContent = currentUser.email;
-    roleEl.textContent = currentUser.role === 'admin' ? '管理员' : '普通同学';
+    roleEl.textContent = U.roleName(currentUser.role);
     roleEl.className = 'profile-value role-' + currentUser.role;
-    classEl.textContent = classInfo ? classInfo.name : currentUser.class_id;
+    classEl.textContent = classInfo ? classInfo.name : (currentUser.class_id || '未加入班级');
+
+    // 未加入班级 → 隐藏退出班级按钮
+    if (!currentUser.class_id) {
+      const leaveBtn = document.getElementById('leave-class-btn');
+      if (leaveBtn) {
+        leaveBtn.disabled = true;
+        leaveBtn.textContent = '未加入班级';
+        leaveBtn.style.opacity = '0.5';
+        leaveBtn.style.cursor = 'not-allowed';
+      }
+    }
 
     renderAvatar();
 
@@ -62,7 +73,7 @@
         if (upErr) throw upErr;
 
         const { data: urlData } = db.storage.from('avatars').getPublicUrl(path);
-        const url = urlData.publicUrl;
+        const url = data.urlData ? data.urlData.publicUrl : urlData.publicUrl;
 
         const { error: dbErr } = await db.from('profiles')
           .update({ avatar_url: url }).eq('id', currentUser.id);
@@ -125,6 +136,26 @@
         msgEl.className = 'form-msg error';
       }
     });
+
+    /* ---------- 退出班级 ---------- */
+    const leaveBtn = document.getElementById('leave-class-btn');
+    if (leaveBtn && currentUser.class_id) {
+      leaveBtn.addEventListener('click', async () => {
+        if (!confirm('确定退出当前班级吗？\n退出后需要重新申请加入。')) return;
+        leaveBtn.disabled = true;
+        leaveBtn.textContent = '处理中…';
+        try {
+          const { error } = await db.rpc('leave_class');
+          if (error) throw error;
+          alert('已退出班级');
+          location.href = 'classes.html';
+        } catch (e) {
+          alert('退出失败：' + e.message);
+          leaveBtn.disabled = false;
+          leaveBtn.textContent = '退出班级';
+        }
+      });
+    }
 
     /* ---------- 注销账号 ---------- */
     const deleteModal = document.getElementById('delete-modal');

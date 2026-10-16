@@ -1,5 +1,5 @@
 /**
- * 认证模块 v1.0.2
+ * 认证模块 v2.5.0
  */
 (function () {
   'use strict';
@@ -9,6 +9,8 @@
 
   const $ = (id) => document.getElementById(id);
   const isLoginPage = !!document.getElementById('login-view');
+  const currentPage = location.pathname.split('/').pop() || 'index.html';
+  const FREE_PAGES = ['login.html', 'classes.html', 'requests.html'];
 
   if (isLoginPage) initLoginPage();
   else guardPage();
@@ -52,10 +54,9 @@
       const email = $('reg-email').value.trim();
       const password = $('reg-password').value;
       const nickname = $('reg-nickname').value.trim();
-      const classId = $('reg-class').value;
-      const adminCode = $('reg-admin-code').value.trim();
+      const inviteCode = ($('reg-invite-code')?.value || '').trim();
 
-      if (!email || !password || !nickname || !classId) {
+      if (!email || !password || !nickname) {
         return setMsg('请填写完整信息', 'error');
       }
       if (password.length < 6) return setMsg('密码至少 6 位', 'error');
@@ -82,26 +83,22 @@
 
       setMsg('注册中…');
 
-      if (adminCode) {
-        localStorage.setItem('pending_admin_code', adminCode);
-        localStorage.setItem('pending_admin_class', classId);
-      }
+      const metaData = { nickname };
+      if (inviteCode) metaData.invite_code = inviteCode;
 
       let signUpResult;
       try {
         signUpResult = await db.auth.signUp({
           email, password,
-          options: { data: { nickname, class_id: classId } }
+          options: { data: metaData }
         });
       } catch (err) {
-        clearPending();
         return setMsg('注册失败：' + (err.message || '未知错误'), 'error');
       }
 
       const { data, error } = signUpResult;
 
       if (error) {
-        clearPending();
         const msg = (error.message || '').toLowerCase();
         if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
           return setMsg('该邮箱已被注册，请直接登录或换一个邮箱', 'error');
@@ -117,24 +114,18 @@
         Array.isArray(data.user.identities) &&
         data.user.identities.length === 0
       ) {
-        clearPending();
         return setMsg('该邮箱已被注册，请直接登录或换一个邮箱', 'error');
       }
 
       if (data && data.session) {
         setMsg('注册成功，正在进入…', 'success');
-        setTimeout(() => { location.href = 'index.html'; }, 800);
+        setTimeout(() => { location.href = 'classes.html'; }, 800);
       } else {
         setMsg('注册成功！请用刚填的邮箱和密码登录', 'success');
         setTimeout(() => {
           showView('login');
           $('login-email').value = email;
         }, 1200);
-      }
-
-      function clearPending() {
-        localStorage.removeItem('pending_admin_code');
-        localStorage.removeItem('pending_admin_class');
       }
     });
   }
@@ -156,10 +147,14 @@
     }
 
     await loadUserProfile(data.session.user);
-    await processPendingAdminCode();
 
     window.currentClassId = window.currentUser.class_id;
     document.documentElement.style.visibility = 'visible';
+
+    if (!window.currentUser.class_id && !FREE_PAGES.includes(currentPage)) {
+      location.href = 'classes.html';
+      return;
+    }
 
     if (window.Topbar) window.Topbar.render();
 
@@ -174,8 +169,9 @@
         id: user.id,
         email: user.email,
         nickname: user.user_metadata?.nickname || '同学',
-        class_id: user.user_metadata?.class_id || 'default',
-        role: 'user',
+        class_id: null,
+        grade: null,
+        role: 'student',
         avatar_url: null
       };
     } else {
@@ -183,26 +179,12 @@
         id: user.id,
         email: user.email,
         nickname: data.nickname,
-        class_id: data.class_id,
+        class_id: data.class_id || null,
+        grade: data.grade || null,
         role: data.role,
         avatar_url: data.avatar_url || null
       };
     }
-  }
-
-  async function processPendingAdminCode() {
-    const code = localStorage.getItem('pending_admin_code');
-    const cls = localStorage.getItem('pending_admin_class');
-    if (!code || !cls) return;
-
-    const { data, error } = await db.rpc('register_as_admin', {
-      p_class_id: cls, p_code: code
-    });
-    if (!error && data === true) {
-      window.currentUser.role = 'admin';
-    }
-    localStorage.removeItem('pending_admin_code');
-    localStorage.removeItem('pending_admin_class');
   }
 
   db.auth.onAuthStateChange((event) => {

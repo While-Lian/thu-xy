@@ -1,4 +1,4 @@
-/* 班级事务 v1.0.0 */
+/* 班级事务 v2.4.0（三类身份 + 活动报名 + 头像墙） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -6,15 +6,21 @@
 
   const $ = (id) => document.getElementById(id);
   const U = window.Utils;
+  const SK = window.Skeleton;
+  let currentUserGlobal = null;
+  let classIdGlobal = null;
+  let isAdminGlobal = false;
 
   window.addEventListener('user-ready', (e) => {
-    const user = e.detail;
-    initClassPage(user);
+    currentUserGlobal = e.detail;
+    classIdGlobal = currentUserGlobal.class_id;
+    isAdminGlobal = U.isAdminRole(currentUserGlobal.role);
+    initClassPage();
   });
 
-  function initClassPage(user) {
-    const classId = user.class_id;
-    const isAdmin = user.role === 'admin';
+  function initClassPage() {
+    const classId = classIdGlobal;
+    const isAdmin = isAdminGlobal;
     const classInfo = SITE_CONFIG.classes.find(c => c.id === classId);
     const className = classInfo ? classInfo.name : classId;
 
@@ -26,7 +32,17 @@
     }
 
     let activities = [];
+    let signupsByKey = {};
     let realtimeChannel = null;
+    let signupChannel = null;
+
+    function ensureId(a) {
+      if (!a.id) {
+        a.id = 'act_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        return true;
+      }
+      return false;
+    }
 
     function normalize(a) {
       if (!Array.isArray(a.weeks)) {
@@ -38,6 +54,7 @@
         .sort((x, y) => x - y);
       if (!Array.isArray(a.mainOwners)) a.mainOwners = [];
       if (!Array.isArray(a.subOwners)) a.subOwners = [];
+      if (typeof a.needsSignup !== 'boolean') a.needsSignup = false;
       return a;
     }
 
@@ -50,10 +67,20 @@
           .single();
 
         if (error && error.code !== 'PGRST116') throw error;
-        if (data && data.activities) return data.activities.map(normalize);
+        if (data && data.activities) {
+          const list = data.activities.map(normalize);
+          let needSave = false;
+          list.forEach(a => { if (ensureId(a)) needSave = true; });
+          if (needSave && isAdmin) {
+            activities = list;
+            await saveActivities();
+          }
+          return list;
+        }
 
         if (isAdmin) {
           const defaults = (DEFAULT_ACTIVITIES[classId] || []).map(normalize);
+          defaults.forEach(a => ensureId(a));
           await db.from('class_activities').insert({ class_id: classId, activities: defaults });
           return defaults;
         }
@@ -76,6 +103,56 @@
       }
     }
 
+    async function loadSignups() {
+      const { data, error } = await db
+        .from('activity_signups')
+        .select('*')
+        .eq('class_id', classId);
+
+      if (error) {
+        console.error('报名数据加载失败', error);
+        signupsByKey = {};
+        return;
+      }
+      signupsByKey = {};
+      (data || []).forEach(s => {
+        (signupsByKey[s.activity_key] = signupsByKey[s.activity_key] || []).push(s);
+      });
+    }
+
+    /* ============ 头像墙 ============ */
+    async function loadMemberWall() {
+      const wall = document.getElementById('member-wall');
+      if (!wall) return;
+      wall.innerHTML = SK.members(8);
+      const { data, error } = await db.rpc('list_class_members_public');
+      if (error) {
+        console.error(error);
+        wall.innerHTML = '<div class="member-wall-empty">加载失败</div>';
+        return;
+      }
+      const members = data || [];
+      if (!members.length) {
+        wall.innerHTML = '<div class="member-wall-empty">暂无成员</div>';
+        return;
+      }
+      wall.innerHTML = members.map(m => {
+        const initial = (m.nickname || '?').charAt(0).toUpperCase();
+        const roleTag = m.role !== 'student'
+          ? `<span class="member-wall-role member-wall-role-${m.role}">${U.roleName(m.role)}</span>`
+          : '';
+        const avatarHtml = m.avatar_url
+          ? `<img src="${m.avatar_url}" class="member-wall-avatar" alt="" />`
+          : `<span class="member-wall-avatar member-wall-avatar-default">${U.escapeHtml(initial)}</span>`;
+        return `
+          <div class="member-wall-item" title="${U.escapeHtml(m.nickname)}">
+            ${avatarHtml}
+            <div class="member-wall-name">${U.escapeHtml(m.nickname)}</div>
+            ${roleTag}
+          </div>`;
+      }).join('');
+    }
+
     function startRealtimeSync() {
       realtimeChannel = db
         .channel('class_' + classId)
@@ -84,9 +161,17 @@
           (payload) => {
             if (payload.new && payload.new.activities) {
               activities = payload.new.activities.map(normalize);
+              activities.forEach(ensureId);
               renderAll();
             }
           })
+        .subscribe();
+
+      signupChannel = db
+        .channel('signups_' + classId)
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'activity_signups', filter: `class_id=eq.${classId}` },
+          () => { loadSignups().then(renderAll); })
         .subscribe();
     }
 
@@ -117,6 +202,44 @@
     function byStartWeek(a, b) {
       return (a.weeks[0] || 99) - (b.weeks[0] || 99)
         || (a.weeks[a.weeks.length - 1] || 0) - (b.weeks[b.weeks.length - 1] || 0);
+    }
+
+    function getMyStatus(activityKey) {
+      const list = signupsByKey[activityKey] || [];
+      const mine = list.find(s => s.user_id === currentUserGlobal.id);
+      return mine ? mine.status : null;
+    }
+
+    function getStats(activityKey) {
+      const list = signupsByKey[activityKey] || [];
+      const stats = { yes: 0, no: 0, maybe: 0, total: list.length };
+      list.forEach(s => { stats[s.status] = (stats[s.status] || 0) + 1; });
+      return stats;
+    }
+
+    async function setMyStatus(activityKey, status) {
+      const existing = (signupsByKey[activityKey] || []).find(s => s.user_id === currentUserGlobal.id);
+      try {
+        if (existing) {
+          const { error } = await db.from('activity_signups')
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await db.from('activity_signups').insert({
+            class_id: classId,
+            activity_key: activityKey,
+            user_id: currentUserGlobal.id,
+            user_name: currentUserGlobal.nickname,
+            status
+          });
+          if (error) throw error;
+        }
+        await loadSignups();
+        renderAll();
+      } catch (e) {
+        alert('操作失败：' + e.message);
+      }
     }
 
     const positionFilter = $('position-filter');
@@ -156,6 +279,16 @@
       renderAll();
     });
 
+    function signupCell(a) {
+      if (!a.needsSignup) return '<span class="signup-none">—</span>';
+      const stats = getStats(a.id);
+      const mine = getMyStatus(a.id);
+      const label = mine === 'yes' ? '✅ 参与' : mine === 'no' ? '❌ 不参与' : mine === 'maybe' ? '🤔 待定' : '❓ 未表态';
+      const cls = mine ? 'signup-btn signup-' + mine : 'signup-btn signup-none';
+      const summary = `<span class="signup-summary">✅${stats.yes} ❌${stats.no} ❓${stats.maybe}</span>`;
+      return `<button class="${cls}" data-signup="${a.id}" title="点击切换">${label}</button>${summary}`;
+    }
+
     function activityRow(a, index) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -167,6 +300,7 @@
         <td class="owner-cell">${formatOwners(a.mainOwners)}</td>
         <td class="owner-cell">${formatOwners(a.subOwners)}</td>
         <td>${U.escapeHtml(a.remark)}</td>
+        <td class="signup-cell">${signupCell(a)}</td>
         <td class="op-cell admin-only">
           <button class="btn btn-ghost btn-small" data-edit="${index}">编辑</button>
           <button class="btn btn-danger btn-small" data-del="${index}">删除</button>
@@ -196,7 +330,7 @@
       }
       recent.sort(byStartWeek);
       if (recent.length === 0) {
-        tbody.appendChild(emptyRow(9, '近期暂无工作安排'));
+        tbody.appendChild(emptyRow(10, '近期暂无工作安排'));
         return;
       }
       recent.forEach(a => tbody.appendChild(activityRow(a, activities.indexOf(a))));
@@ -261,8 +395,7 @@
             if (!weekSet.has(w + 1)) classes.push('bar-end');
           }
           if (w === cw) classes.push('col-current');
-          const title = weekSet.has(w) ? ` title="${U.escapeHtml(a.title)} · 第${w}周"` : '';
-          cells += `<td class="${classes.join(' ')}"${title}>${weekSet.has(w) ? '<div class="bar-fill"></div>' : ''}</td>`;
+          cells += `<td class="${classes.join(' ')}">${weekSet.has(w) ? '<div class="bar-fill"></div>' : ''}</td>`;
         }
         tr.innerHTML = cells;
         tbody.appendChild(tr);
@@ -274,7 +407,7 @@
       tbody.innerHTML = '';
       const sorted = [...list].sort(byStartWeek);
       if (sorted.length === 0) {
-        tbody.appendChild(emptyRow(9, '暂无活动'));
+        tbody.appendChild(emptyRow(10, '暂无活动'));
         return;
       }
       sorted.forEach(a => tbody.appendChild(activityRow(a, activities.indexOf(a))));
@@ -286,6 +419,30 @@
       renderTimeline(filtered);
       renderSchedule(filtered);
       renderSemester(filtered);
+      bindSignupButtons();
+    }
+
+    function bindSignupButtons() {
+      document.querySelectorAll('[data-signup]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const key = btn.dataset.signup;
+          const cur = getMyStatus(key);
+          const next = cur === null ? 'yes'
+            : cur === 'yes' ? 'no'
+            : cur === 'no' ? 'maybe'
+            : null;
+          if (next === null) {
+            const existing = (signupsByKey[key] || []).find(s => s.user_id === currentUserGlobal.id);
+            if (existing) {
+              db.from('activity_signups').delete().eq('id', existing.id)
+                .then(() => loadSignups().then(renderAll));
+            }
+          } else {
+            setMyStatus(key, next);
+          }
+        });
+      });
     }
 
     const viewBtns = document.querySelectorAll('.view-btn');
@@ -412,6 +569,7 @@
       $('f-location').value = a ? a.location : '';
       $('f-requirement').value = a ? a.requirement : '';
       $('f-remark').value = a ? a.remark : '';
+      $('f-needs-signup').checked = a ? !!a.needsSignup : false;
       setupOwnerList('f-main-owner', a ? a.mainOwners : [], 1);
       setupOwnerList('f-sub-owners', a ? a.subOwners : [], 5);
       modal.style.display = 'flex';
@@ -430,14 +588,18 @@
       const title = $('f-title').value.trim();
       if (weeks.length === 0) return alert('请选择至少一个周次');
       if (!title) return alert('请填写活动标题');
+
+      const oldId = editingIndex !== null ? activities[editingIndex].id : null;
       const data = {
+        id: oldId || ('act_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)),
         weeks, title,
         time: $('f-time').value.trim(),
         location: $('f-location').value.trim(),
         requirement: $('f-requirement').value.trim(),
         mainOwners: readOwnerList('f-main-owner').slice(0, 1),
         subOwners: readOwnerList('f-sub-owners'),
-        remark: $('f-remark').value.trim()
+        remark: $('f-remark').value.trim(),
+        needsSignup: $('f-needs-signup').checked
       };
       if (editingIndex === null) activities.push(data);
       else activities[editingIndex] = data;
@@ -453,7 +615,7 @@
         openModal(Number(editIdx));
       } else if (delIdx !== null) {
         const a = activities[Number(delIdx)];
-        if (confirm(`确定删除活动「${a.title}」（${U.formatWeeks(a.weeks)}）吗？`)) {
+        if (confirm(`确定删除活动「${a.title}」吗？`)) {
           activities.splice(Number(delIdx), 1);
           saveActivities();
           renderAll();
@@ -463,7 +625,9 @@
 
     $('add-activity').addEventListener('click', () => openModal(null));
 
-    loadActivities().then(loaded => {
+    /* ---------- 启动 ---------- */
+    loadMemberWall();
+    Promise.all([loadActivities(), loadSignups()]).then(([loaded]) => {
       activities = loaded;
       renderAll();
       startRealtimeSync();

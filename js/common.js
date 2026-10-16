@@ -1,4 +1,4 @@
-/* 通用工具 & 顶栏 v2.1.0 */
+/* 通用工具 & 顶栏 v3.0.1 */
 
 window.Utils = {
   escapeHtml(s) {
@@ -50,32 +50,147 @@ window.Utils = {
     if (hours < 24) return `还有 ${hours} 小时`;
     const days = Math.floor(hours / 24);
     return `还有 ${days} 天`;
+  },
+  roleName(role) {
+    return { student: '学生', committee: '班委', teacher: '老师' }[role] || role;
+  },
+  isAdminRole(role) {
+    return role === 'committee' || role === 'teacher';
+  }
+};
+
+window.Skeleton = {
+  posts(count = 3) {
+    return Array.from({ length: count }).map(() => `
+      <div class="sk-post">
+        <div class="sk-row">
+          <div class="sk-avatar"></div>
+          <div class="sk-info">
+            <div class="sk-line sk-line-md"></div>
+            <div class="sk-line sk-line-sm"></div>
+          </div>
+        </div>
+        <div class="sk-line sk-line-full" style="margin-top:14px;"></div>
+        <div class="sk-line sk-line-full" style="width:75%; margin-top:8px;"></div>
+      </div>
+    `).join('');
+  },
+  files(count = 4) {
+    return Array.from({ length: count }).map(() => `
+      <div class="sk-file">
+        <div class="sk-icon"></div>
+        <div class="sk-info">
+          <div class="sk-line sk-line-md"></div>
+          <div class="sk-line sk-line-sm"></div>
+        </div>
+      </div>
+    `).join('');
+  },
+  cards(count = 6) {
+    return Array.from({ length: count }).map(() => `
+      <div class="sk-card">
+        <div class="sk-line sk-line-full" style="width:40%;"></div>
+        <div class="sk-line sk-line-full" style="margin-top:10px;"></div>
+        <div class="sk-line sk-line-full" style="width:60%; margin-top:6px;"></div>
+      </div>
+    `).join('');
+  },
+  members(count = 8) {
+    return Array.from({ length: count }).map(() => `
+      <div class="sk-member">
+        <div class="sk-avatar-lg"></div>
+        <div class="sk-line sk-line-sm" style="margin-top:8px;"></div>
+      </div>
+    `).join('');
+  },
+  photos(count = 8) {
+    return Array.from({ length: count }).map(() => `
+      <div class="sk-photo"></div>
+    `).join('');
   }
 };
 
 window.Topbar = {
-  render() {
+  async render() {
     const u = window.currentUser;
     if (!u) return;
     const bar = document.getElementById('topbar');
     if (!bar) return;
 
+    const U = window.Utils;
     const currentPage = location.pathname.split('/').pop() || 'index.html';
-    const links = [
+
+    // ===== 未加入班级 =====
+    if (!u.class_id) {
+      bar.innerHTML = `
+        <div class="topbar-inner">
+          <a href="classes.html" class="topbar-brand">
+            <span class="topbar-brand-icon">清</span>
+            <span class="topbar-brand-text">清华大学 · 行健书院</span>
+          </a>
+          <nav class="topbar-nav">
+            <a href="classes.html" class="topbar-link active">班级广场</a>
+          </nav>
+          <div class="topbar-right">
+            <div class="topbar-user" id="topbar-user">
+              ${this.avatarHtml(u)}
+              <span class="topbar-username">${U.escapeHtml(u.nickname)}</span>
+              <span class="topbar-caret">▾</span>
+              <div class="topbar-dropdown" id="topbar-dropdown">
+                <a href="profile.html">个人中心</a>
+                <a href="#" id="topbar-logout">退出登录</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      this.bindUserEvents();
+      return;
+    }
+
+    // ===== 已加入班级 =====
+    // 主链接（6 个常用项）
+    const mainLinks = [
       { href: 'class.html',      label: '班级事务', page: 'class.html' },
       { href: 'forum.html',      label: '班级论坛', page: 'forum.html' },
       { href: 'activities.html', label: '活动统计', page: 'activities.html' },
       { href: 'files.html',      label: '班级文件', page: 'files.html' },
+      { href: 'photos.html',     label: '班级相册', page: 'photos.html' },
       { href: 'personal.html',   label: '个人管理', page: 'personal.html' }
     ];
-    if (u.role === 'admin') {
-      links.push({ href: 'admin.html', label: '用户管理', page: 'admin.html' });
+
+    let pendingCount = 0;
+    if (U.isAdminRole(u.role)) {
+      try {
+        const { count } = await window.supabaseClient
+          .from('class_join_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('class_id', u.class_id)
+          .eq('status', 'pending');
+        pendingCount = count || 0;
+      } catch (e) { /* 忽略 */ }
     }
 
-    const initial = (u.nickname || '?').charAt(0).toUpperCase();
-    const avatarHtml = u.avatar_url
-      ? `<img src="${u.avatar_url}" class="topbar-avatar" alt="" />`
-      : `<span class="topbar-avatar topbar-avatar-default">${window.Utils.escapeHtml(initial)}</span>`;
+    const isAdminPage = ['admin.html', 'requests.html', 'stats.html'].includes(currentPage);
+
+    const roleTagHtml = u.role !== 'student'
+      ? `<span class="topbar-role topbar-role-${u.role}">${U.roleName(u.role)}</span>`
+      : '';
+
+    const adminMenuHtml = U.isAdminRole(u.role) ? `
+      <div class="topbar-manage" id="topbar-manage">
+        <button class="topbar-link topbar-manage-btn${isAdminPage ? ' active' : ''}" type="button">
+          管理
+          ${pendingCount > 0 ? `<span class="topbar-badge">${pendingCount}</span>` : ''}
+          <span class="topbar-caret">▾</span>
+        </button>
+                <div class="topbar-dropdown topbar-manage-dropdown" id="topbar-manage-dropdown">
+          <a href="admin.html">👥 用户管理</a>
+          <a href="requests.html">📨 申请审批 ${pendingCount > 0 ? `<span class="topbar-badge-inline">${pendingCount}</span>` : ''}</a>
+          <a href="stats.html">📊 数据统计</a>
+        </div>
+      </div>
+    ` : '';
 
     bar.innerHTML = `
       <div class="topbar-inner">
@@ -84,24 +199,47 @@ window.Topbar = {
           <span class="topbar-brand-text">清华大学 · 行健书院</span>
         </a>
         <nav class="topbar-nav">
-          ${links.map(l => `<a href="${l.href}" class="topbar-link${currentPage === l.page ? ' active' : ''}">${l.label}</a>`).join('')}
+          ${mainLinks.map(l => {
+            const cls = `topbar-link${currentPage === l.page ? ' active' : ''}`;
+            return `<a href="${l.href}" class="${cls}">${U.escapeHtml(l.label)}</a>`;
+          }).join('')}
         </nav>
-        <div class="topbar-user" id="topbar-user">
-          ${avatarHtml}
-          <span class="topbar-username">${window.Utils.escapeHtml(u.nickname)}</span>
-          <span class="topbar-caret">▾</span>
-          <div class="topbar-dropdown" id="topbar-dropdown">
-            <a href="profile.html">个人中心</a>
-            <a href="#" id="topbar-logout">退出登录</a>
+        <div class="topbar-right">
+          ${adminMenuHtml}
+          <div class="topbar-user" id="topbar-user">
+            ${this.avatarHtml(u)}
+            <span class="topbar-username">${U.escapeHtml(u.nickname)}${roleTagHtml}</span>
+            <span class="topbar-caret">▾</span>
+            <div class="topbar-dropdown" id="topbar-dropdown">
+              <a href="profile.html">👤 个人中心</a>
+              <a href="classes.html">🏫 班级广场</a>
+              <a href="#" id="topbar-logout">🚪 退出登录</a>
+            </div>
           </div>
         </div>
       </div>
     `;
 
+    this.bindUserEvents();
+    this.bindManageEvents();
+  },
+
+  avatarHtml(u) {
+    const initial = (u.nickname || '?').charAt(0).toUpperCase();
+    return u.avatar_url
+      ? `<img src="${u.avatar_url}" class="topbar-avatar" alt="" />`
+      : `<span class="topbar-avatar topbar-avatar-default">${window.Utils.escapeHtml(initial)}</span>`;
+  },
+
+  bindUserEvents() {
     const userEl = document.getElementById('topbar-user');
     const dropdown = document.getElementById('topbar-dropdown');
+    if (!userEl || !dropdown) return;
+
     userEl.addEventListener('click', (e) => {
       e.stopPropagation();
+      const manageDropdown = document.getElementById('topbar-manage-dropdown');
+      if (manageDropdown) manageDropdown.classList.remove('show');
       dropdown.classList.toggle('show');
     });
     document.addEventListener('click', () => dropdown.classList.remove('show'));
@@ -111,5 +249,20 @@ window.Topbar = {
       await window.supabaseClient.auth.signOut();
       location.href = 'login.html';
     });
+  },
+
+  bindManageEvents() {
+    const manageEl = document.getElementById('topbar-manage');
+    const dropdown = document.getElementById('topbar-manage-dropdown');
+    if (!manageEl || !dropdown) return;
+
+    const btn = manageEl.querySelector('.topbar-manage-btn');
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const userDropdown = document.getElementById('topbar-dropdown');
+      if (userDropdown) userDropdown.classList.remove('show');
+      dropdown.classList.toggle('show');
+    });
+    document.addEventListener('click', () => dropdown.classList.remove('show'));
   }
 };

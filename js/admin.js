@@ -1,4 +1,4 @@
-/* 用户管理 v1.0.0 */
+/* 用户管理 v2.1.0（三类身份） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -11,7 +11,7 @@
 
   window.addEventListener('user-ready', (e) => {
     currentUser = e.detail;
-    if (currentUser.role !== 'admin') {
+    if (!U.isAdminRole(currentUser.role)) {
       alert('无权限访问此页面');
       location.href = 'index.html';
       return;
@@ -28,6 +28,12 @@
     const msgEl = document.getElementById('reset-msg');
     const confirmBtn = document.getElementById('reset-confirm');
     const cancelBtn = document.getElementById('reset-cancel');
+
+    const isTeacher = currentUser.role === 'teacher';
+
+    if (!isTeacher) {
+      document.querySelectorAll('.teacher-only').forEach(el => el.style.display = 'none');
+    }
 
     loadMembers();
 
@@ -122,11 +128,10 @@
         const avatarHtml = m.avatar_url
           ? `<img src="${m.avatar_url}" class="member-avatar" alt="" />`
           : `<span class="member-avatar member-avatar-default">${U.escapeHtml(initial)}</span>`;
-        const roleTag = m.role === 'admin'
-          ? '<span class="member-role member-role-admin">管理员</span>'
-          : '<span class="member-role member-role-user">同学</span>';
+        const roleTag = `<span class="member-role member-role-${m.role}">${U.roleName(m.role)}</span>`;
         const isSelf = m.id === currentUser.id;
         const selfMark = isSelf ? '<span class="member-self">（我）</span>' : '';
+        const canChangeRole = isTeacher && !isSelf;
 
         return `
           <div class="member-item">
@@ -137,6 +142,12 @@
               <div class="member-time">注册于 ${U.formatTime(m.created_at)}</div>
             </div>
             <div class="member-actions">
+              ${canChangeRole ? `
+                <select class="role-select" data-role-user="${m.id}">
+                  <option value="student" ${m.role === 'student' ? 'selected' : ''}>学生</option>
+                  <option value="committee" ${m.role === 'committee' ? 'selected' : ''}>班委</option>
+                  <option value="teacher" ${m.role === 'teacher' ? 'selected' : ''}>老师/辅导员</option>
+                </select>` : ''}
               <button class="btn btn-ghost btn-small" data-reset="${m.id}" data-name="${U.escapeHtml(m.nickname)}">重置密码</button>
             </div>
           </div>
@@ -146,6 +157,33 @@
       listEl.querySelectorAll('[data-reset]').forEach(btn => {
         btn.addEventListener('click', () => {
           openModal(btn.dataset.reset, btn.dataset.name);
+        });
+      });
+
+      // 老师专属：下拉修改身份
+      listEl.querySelectorAll('[data-role-user]').forEach(sel => {
+        const original = sel.value;
+        sel.addEventListener('change', async () => {
+          const userId = sel.dataset.roleUser;
+          const newRole = sel.value;
+          const m = members.find(x => x.id === userId);
+          if (!m) return;
+          if (!confirm(`确定把「${m.nickname}」的身份改为「${U.roleName(newRole)}」吗？`)) {
+            sel.value = original;
+            return;
+          }
+          try {
+            const { error } = await db.rpc('teacher_set_role', {
+              p_user_id: userId,
+              p_new_role: newRole
+            });
+            if (error) throw error;
+            alert('身份已更新');
+            await loadMembers();
+          } catch (err) {
+            alert('修改失败：' + err.message);
+            sel.value = original;
+          }
         });
       });
     }
