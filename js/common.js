@@ -1,4 +1,4 @@
-/* 通用工具 & 顶栏 v1.0.0 */
+/* 通用工具 & 顶栏 v2.1.0 */
 
 window.Utils = {
   escapeHtml(s) {
@@ -37,6 +37,19 @@ window.Utils = {
     if (weeks.length === 1) return `第${weeks[0]}周`;
     if (isContinuous) return `第${weeks[0]}-${weeks[weeks.length - 1]}周`;
     return '第' + weeks.join('、') + '周';
+  },
+  formatDeadline(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = d - now;
+    if (diff < 0) return '已截止';
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `还有 ${mins} 分钟`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `还有 ${hours} 小时`;
+    const days = Math.floor(hours / 24);
+    return `还有 ${days} 天`;
   }
 };
 
@@ -49,9 +62,11 @@ window.Topbar = {
 
     const currentPage = location.pathname.split('/').pop() || 'index.html';
     const links = [
-      { href: 'class.html', label: '班级事务', page: 'class.html' },
-      { href: 'forum.html', label: '班级论坛', page: 'forum.html' },
-      { href: 'files.html', label: '班级文件', page: 'files.html' }
+      { href: 'class.html',      label: '班级事务', page: 'class.html' },
+      { href: 'forum.html',      label: '班级论坛', page: 'forum.html' },
+      { href: 'activities.html', label: '活动统计', page: 'activities.html' },
+      { href: 'files.html',      label: '班级文件', page: 'files.html' },
+      { href: 'personal.html',   label: '个人管理', page: 'personal.html' }
     ];
     if (u.role === 'admin') {
       links.push({ href: 'admin.html', label: '用户管理', page: 'admin.html' });
