@@ -1,5 +1,28 @@
 /* 通用工具 & 顶栏 v3.4.1 */
+/* ============================================================
+ * 修复多页面跳转时，错过 user-ready 事件的 Bug
+ * 原理：拦截全局的事件监听。如果用户信息已经就绪，
+ * 业务代码再去监听时，直接给它的回调函数补发一次。
+ * ============================================================ */
+(function() {
+  const originalAddEventListener = window.addEventListener;
+  window.addEventListener = function(type, listener, options) {
+    if (type === 'user-ready') {
+      if (window.currentUser) {
+        // 如果用户信息已经存在，说明事件已经发生过，直接异步执行回调
+        setTimeout(() => {
+          try { listener({ detail: window.currentUser }); } catch (e) { console.error(e); }
+        }, 0);
+        return; 
+      }
+    }
+    return originalAddEventListener.call(window, type, listener, options);
+  };
+})();
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
 window.Utils = {
   escapeHtml(s) {
     return String(s == null ? '' : s)

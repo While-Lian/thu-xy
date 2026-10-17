@@ -1,4 +1,4 @@
-/* 班级文件 v2.4.0（含文件夹分类） */
+/* 班级文件 v3.6.0（大文件拦截 + 图片压缩） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -6,12 +6,7 @@
   const U = window.Utils;
   const SK = window.Skeleton;
 
-  let currentUser = null;
-  let files = [];
-  let folders = [];
-  let activeFolder = '';
-  let searchKeyword = '';
-  let pendingFile = null;
+  let currentUser = null, files = [], folders = [], activeFolder = '', searchKeyword = '', pendingFile = null;
 
   window.addEventListener('user-ready', (e) => {
     currentUser = e.detail;
@@ -28,9 +23,7 @@
     const uploadFolderInput = document.getElementById('upload-folder');
     const isAdmin = U.isAdminRole(currentUser.role);
 
-    if (!isAdmin) {
-      dropZone.style.display = 'none';
-    }
+    if (!isAdmin) dropZone.style.display = 'none';
 
     loadFiles();
 
@@ -40,28 +33,31 @@
       fileInput.value = '';
     });
 
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('drag-over');
-    });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
     dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
+      e.preventDefault(); dropZone.classList.remove('drag-over');
       if (!isAdmin) return;
       if (e.dataTransfer.files.length) openUploadModal(e.dataTransfer.files[0]);
     });
 
-    searchInput.addEventListener('input', () => {
-      searchKeyword = searchInput.value.trim().toLowerCase();
-      renderFiles();
-    });
+    searchInput.addEventListener('input', () => { searchKeyword = searchInput.value.trim().toLowerCase(); renderFiles(); });
 
     document.getElementById('upload-cancel').addEventListener('click', closeUploadModal);
     uploadModal.addEventListener('click', (e) => { if (e.target === uploadModal) closeUploadModal(); });
     document.getElementById('upload-confirm').addEventListener('click', doUpload);
 
     function openUploadModal(file) {
+      // ⚠️ 第一道防线：前端拦截
+      const forbiddenExts = ['mp4', 'avi', 'mov', 'mkv', 'zip', 'rar', '7z', 'iso'];
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (forbiddenExts.includes(ext)) {
+        return alert('为了节省班级云空间，系统禁止上传视频和大型压缩包。请分享链接或传 PDF/图片。');
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        return alert('单个文件不能超过 15MB');
+      }
+
       pendingFile = file;
       document.getElementById('upload-filename').textContent = file.name;
       uploadFolderInput.value = activeFolder || '默认';
@@ -70,76 +66,44 @@
       uploadFolderInput.focus();
     }
 
-    function closeUploadModal() {
-      uploadModal.style.display = 'none';
-      pendingFile = null;
-    }
+    function closeUploadModal() { uploadModal.style.display = 'none'; pendingFile = null; }
 
     function updateFolderDatalist() {
       const dl = document.getElementById('folder-datalist');
-      dl.innerHTML = folders.map(f =>
-        `<option value="${U.escapeHtml(f.folder)}"></option>`
-      ).join('');
+      dl.innerHTML = folders.map(f => `<option value="${U.escapeHtml(f.folder)}"></option>`).join('');
     }
 
     async function loadFiles() {
       listEl.innerHTML = SK.files(4);
-      const { data, error } = await db
-        .from('class_files')
-        .select('*')
-        .eq('class_id', window.currentClassId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        listEl.innerHTML = '<div class="file-empty">加载失败</div>';
-        return;
-      }
+      const { data, error } = await db.from('class_files').select('*').eq('class_id', window.currentClassId).order('created_at', { ascending: false });
+      if (error) { listEl.innerHTML = '<div class="file-empty">加载失败</div>'; return; }
       files = data || [];
 
-      // 计算文件夹
       const folderMap = {};
-      files.forEach(f => {
-        const k = f.folder || '默认';
-        folderMap[k] = (folderMap[k] || 0) + 1;
-      });
+      files.forEach(f => { const k = f.folder || '默认'; folderMap[k] = (folderMap[k] || 0) + 1; });
       folders = Object.keys(folderMap).sort().map(k => ({ folder: k, count: folderMap[k] }));
 
-      renderFolders();
-      updateFolderDatalist();
-      renderFiles();
+      renderFolders(); updateFolderDatalist(); renderFiles();
     }
 
     function renderFolders() {
       const tabsEl = document.getElementById('folder-tabs');
       const total = files.length;
       let html = `<button class="folder-tab${activeFolder === '' ? ' active' : ''}" data-folder="">📂 全部 (${total})</button>`;
-      html += folders.map(f =>
-        `<button class="folder-tab${activeFolder === f.folder ? ' active' : ''}" data-folder="${U.escapeHtml(f.folder)}">📁 ${U.escapeHtml(f.folder)} (${f.count})</button>`
-      ).join('');
+      html += folders.map(f => `<button class="folder-tab${activeFolder === f.folder ? ' active' : ''}" data-folder="${U.escapeHtml(f.folder)}">📁 ${U.escapeHtml(f.folder)} (${f.count})</button>`).join('');
       tabsEl.innerHTML = html;
-
       tabsEl.querySelectorAll('.folder-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          activeFolder = tab.dataset.folder;
-          renderFolders();
-          renderFiles();
-        });
+        tab.addEventListener('click', () => { activeFolder = tab.dataset.folder; renderFolders(); renderFiles(); });
       });
     }
 
     function renderFiles() {
       let list = files;
-      if (activeFolder) {
-        list = list.filter(f => (f.folder || '默认') === activeFolder);
-      }
-      if (searchKeyword) {
-        list = list.filter(f => f.name.toLowerCase().includes(searchKeyword));
-      }
+      if (activeFolder) list = list.filter(f => (f.folder || '默认') === activeFolder);
+      if (searchKeyword) list = list.filter(f => f.name.toLowerCase().includes(searchKeyword));
 
       if (!list.length) {
-        listEl.innerHTML = '<div class="file-empty">' +
-          (searchKeyword ? '没有匹配的文件' : (activeFolder ? '此文件夹为空' : '暂无文件')) +
-          '</div>';
+        listEl.innerHTML = '<div class="file-empty">' + (searchKeyword ? '没有匹配的文件' : (activeFolder ? '此文件夹为空' : '暂无文件')) + '</div>';
         return;
       }
 
@@ -190,44 +154,33 @@
       const msgEl = document.getElementById('upload-msg');
       const btn = document.getElementById('upload-confirm');
 
-      if (file.size > 50 * 1024 * 1024) {
-        msgEl.textContent = '文件不能超过 50MB';
-        msgEl.className = 'form-msg error';
-        return;
+      let finalFile = file;
+      // 如果传的是图片，尝试静默压缩到 1024
+      if (file.type.startsWith('image/')) {
+        msgEl.textContent = '图片压缩中…'; msgEl.className = 'form-msg';
+        try { finalFile = await U.resizeImage(file, 1024, 1024, 0.85); } catch (e) { console.warn('压缩失败', e); }
       }
 
-      const filePath = `${window.currentClassId}/${Date.now()}-${file.name}`;
+      const filePath = `${window.currentClassId}/${Date.now()}-${finalFile.name}`;
 
-      btn.disabled = true;
-      btn.textContent = '上传中…';
-      msgEl.textContent = '';
+      btn.disabled = true; btn.textContent = '上传中…'; msgEl.textContent = '';
 
       try {
-        const { error: upErr } = await db.storage
-          .from('class-files')
-          .upload(filePath, file, { upsert: false });
+        const { error: upErr } = await db.storage.from('class-files').upload(filePath, finalFile, { upsert: false });
         if (upErr) throw upErr;
 
         const { error: dbErr } = await db.from('class_files').insert({
-          class_id: window.currentClassId,
-          name: file.name,
-          path: filePath,
-          size: file.size,
-          mime_type: file.type,
-          uploader_id: currentUser.id,
-          uploader_name: currentUser.nickname,
-          folder
+          class_id: window.currentClassId, name: finalFile.name, path: filePath,
+          size: finalFile.size, mime_type: finalFile.type,
+          uploader_id: currentUser.id, uploader_name: currentUser.nickname, folder
         });
         if (dbErr) throw dbErr;
 
-        closeUploadModal();
-        await loadFiles();
+        closeUploadModal(); await loadFiles();
       } catch (err) {
-        msgEl.textContent = err.message || '上传失败';
-        msgEl.className = 'form-msg error';
+        msgEl.textContent = err.message || '上传失败'; msgEl.className = 'form-msg error';
       } finally {
-        btn.disabled = false;
-        btn.textContent = '上传';
+        btn.disabled = false; btn.textContent = '上传';
       }
     }
 
@@ -237,16 +190,11 @@
       if (!confirm(`确定删除「${f.name}」吗？`)) return;
 
       try {
-        const { error: stErr } = await db.storage.from('class-files').remove([f.path]);
-        if (stErr) console.warn('删除存储失败', stErr);
-
+        await db.storage.from('class-files').remove([f.path]);
         const { error: dbErr } = await db.from('class_files').delete().eq('id', id);
         if (dbErr) throw dbErr;
-
         await loadFiles();
-      } catch (err) {
-        alert('删除失败：' + err.message);
-      }
+      } catch (err) { alert('删除失败：' + err.message); }
     }
   }
 })();
