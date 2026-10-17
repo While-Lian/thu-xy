@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>匿名意见箱</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+  <main class="page-main">
+    <header class="page-header">
+      <h1>📫 匿名意见箱</h1>
+      <p class="page-desc">你的声音，我们在听。任何建议或吐槽都可以匿名发送。</p>
+    </header>
+
+    <section class="block" id="submit-block">
+      <h2 class="block-title">发送匿名悄悄话</h2>
+      <textarea id="fb-content" placeholder="在这里写下你的建议、意见或想说的话（绝对匿名，班委也不知道你是谁）..." maxlength="500" rows="4" class="post-content-input" style="width: 100%;"></textarea>
+      <div style="text-align: right; margin-top: 12px;">
+        <button id="fb-submit" class="btn btn-primary">匿名发送</button>
+      </div>
+      <p id="fb-msg" class="form-msg" style="text-align: right;"></p>
+    </section>
+
+    <section class="block" id="admin-block" style="display: none;">
+      <h2 class="block-title">收到的意见（仅管理员可见）</h2>
+      <div id="fb-list" class="feedback-list">
+        <div class="announce-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><p>THU-XY · 匿名意见箱</p></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/feedback.js"></script>
+</body>
+</html>

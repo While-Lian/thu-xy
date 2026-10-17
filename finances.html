@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班费账本</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+  <main class="page-main">
+    <header class="page-header">
+      <h1>💰 班费收支账本</h1>
+      <p class="page-desc">公开透明，每一笔都清清楚楚</p>
+    </header>
+
+    <section class="block" style="text-align: center; background: linear-gradient(135deg, #fff 0%, var(--primary-lighter) 100%);">
+      <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">当前班费余额</div>
+      <div id="balance-display" style="font-size: 36px; font-weight: 700; color: var(--primary);">¥ 0.00</div>
+    </section>
+
+    <section class="block">
+      <div class="block-header">
+        <h2 class="block-title">收支明细</h2>
+        <button id="add-finance-btn" class="btn btn-primary btn-small admin-only" style="display: none;">＋ 记一笔</button>
+      </div>
+      <div id="finance-list" class="finance-list">
+        <div class="announce-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><p>THU-XY · 班费账本</p></footer>
+
+  <!-- 记账弹窗 -->
+  <div id="finance-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 400px;">
+      <h3>记一笔账</h3>
+      <div class="form-grid">
+        <label>类型</label>
+        <select id="fin-type" style="padding:8px; border-radius:8px; border:1px solid var(--border);">
+          <option value="income">收入（收班费）</option>
+          <option value="expense">支出（花销）</option>
+        </select>
+        <label>金额</label>
+        <input type="number" id="fin-amount" placeholder="¥ 0.00" step="0.01" min="0.01" />
+        <label>事项</label>
+        <input type="text" id="fin-title" placeholder="如：打印复习资料" maxlength="30" />
+      </div>
+      <p id="fin-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="fin-save" class="btn btn-primary">保存</button>
+        <button id="fin-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/finances.js"></script>
+</body>
+</html>

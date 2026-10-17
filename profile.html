@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <!-- PWA 配置 -->
-  <link rel="manifest" href="/thu-xy/manifest.json">
-  <meta name="theme-color" content="#660874">
-  <link rel="apple-touch-icon" href="/thu-xy/icon-192.png">
-  
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>个人中心</title>
@@ -46,6 +41,23 @@
       </div>
     </section>
 
+    <!-- 新增：成就展示 -->
+    <section class="block">
+      <h2 class="block-title">🏆 我的成就</h2>
+      <div id="achievement-card" style="padding: 16px; background: var(--primary-lighter); border-radius: var(--radius-md);">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+          <div id="exp-level" style="font-size:18px; font-weight:700;"></div>
+          <div id="exp-text" style="font-size:13px; color:var(--text-secondary);"></div>
+        </div>
+        <div style="height:10px; background:var(--border); border-radius:5px; overflow:hidden;">
+          <div id="exp-bar" style="height:100%; width:0%; background:var(--primary); border-radius:5px; transition:width 0.5s;"></div>
+        </div>
+        <div style="font-size:12px; color:var(--text-tertiary); margin-top:8px;">
+          💡 发帖 +10 EXP，回帖/接龙 +5 EXP。水群越快，升级越快！
+        </div>
+      </div>
+    </section>
+
     <section class="block">
       <h2 class="block-title">修改昵称</h2>
       <div class="form-inline">
@@ -54,7 +66,6 @@
       </div>
     </section>
 
-    <!-- 新增：名片设置 -->
     <section class="block">
       <h2 class="block-title">我的名片</h2>
       <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">同学们点击你的头像时可以查看以下信息，留空则显示"未填写"。</p>
@@ -89,7 +100,6 @@
         </div>
         <button id="leave-class-btn" class="btn btn-danger">退出班级</button>
       </div>
-
       <div class="danger-row" style="margin-top:20px;">
         <div class="danger-info">
           <div class="danger-title-text">注销账号</div>
@@ -110,8 +120,7 @@
       <p style="color: #666; font-size: 13px; line-height: 1.7; margin-bottom: 16px;">
         此操作<b style="color: #e53935;">不可恢复</b>。请输入密码以确认注销：
       </p>
-      <input type="password" id="delete-password" placeholder="请输入当前密码"
-             style="width: 100%; padding: 10px 14px; border: 1px solid #ebe5ef; border-radius: 8px; outline: none;" />
+      <input type="password" id="delete-password" placeholder="请输入当前密码" style="width: 100%; padding: 10px 14px; border: 1px solid #ebe5ef; border-radius: 8px; outline: none;" />
       <p id="delete-msg" class="form-msg" style="margin-top: 10px;"></p>
       <div class="modal-buttons">
         <button id="delete-cancel" class="btn btn-ghost">取消</button>

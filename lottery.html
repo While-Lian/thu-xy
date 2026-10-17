@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎲 随机抽签</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .lottery-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--primary-lighter) 100%);
+      padding: 40px 20px;
+      min-height: calc(100vh - 150px);
+      border-radius: var(--radius-lg);
+    }
+    .lottery-display {
+      width: 100%;
+      max-width: 800px;
+      min-height: 300px;
+      background: var(--white);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(102, 8, 116, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 8px;
+      margin-bottom: 40px;
+      transition: all 0.3s;
+      border: 4px solid var(--primary-light);
+      text-align: center;
+      padding: 20px;
+      word-break: break-all;
+    }
+    .lottery-display.rolling {
+      color: #999;
+      font-size: 60px;
+    }
+    .lottery-controls {
+      display: flex;
+      gap: 20px;
+      background: var(--white);
+      padding: 20px 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .lottery-controls select, 
+    .lottery-controls input {
+      padding: 12px 20px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 16px;
+      outline: none;
+      font-family: inherit;
+      background: var(--bg);
+    }
+    .btn-giant {
+      padding: 16px 60px;
+      font-size: 24px;
+      font-weight: 700;
+      border-radius: 16px;
+      letter-spacing: 4px;
+      box-shadow: 0 8px 20px rgba(102, 8, 116, 0.3);
+    }
+    /* 分组展示区 */
+    .group-result {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 30px;
+    }
+    .group-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+      border-top: 6px solid var(--primary);
+    }
+    .group-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 12px;
+      text-align: center;
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 8px;
+    }
+    .group-member {
+      font-size: 16px;
+      padding: 8px 12px;
+      background: var(--primary-lighter);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <div class="lottery-wrap">
+      <div id="lottery-display" class="lottery-display">准备就绪</div>
+
+      <div class="lottery-controls" id="single-controls">
+        <button id="start-draw-btn" class="btn btn-primary btn-giant">开始抽签</button>
+        <button id="switch-to-group-btn" class="btn btn-ghost">📦 切换为分组模式</button>
+      </div>
+
+      <div class="lottery-controls" id="group-controls" style="display: none;">
+        <span style="font-size: 16px; font-weight: 600; color: var(--text-secondary);">分成</span>
+        <input type="number" id="group-count" value="3" min="2" max="10" style="width: 80px; text-align: center;" />
+        <span style="font-size: 16px; font-weight: 600; color: var(--text-secondary);">组</span>
+        <button id="start-group-btn" class="btn btn-primary">开始分组</button>
+        <button id="switch-to-single-btn" class="btn btn-ghost">🎲 切换为抽签模式</button>
+      </div>
+
+      <div id="group-result" class="group-result" style="display: none;"></div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/lottery.js"></script>
+</body>
+</html>

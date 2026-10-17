@@ -10,6 +10,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>班级论坛</title>
   <link rel="stylesheet" href="css/style.css" />
+  <!-- 在 <head> 标签内，css 引入的下面添加 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
 </head>
 <body>
   <div id="topbar" class="topbar"></div>
@@ -43,7 +46,14 @@
             <option value="public">公共</option>
           </select>
           <span id="post-scope-hint" class="post-scope-hint"></span>
+          
+          <!-- 👇 新增：匿名选项 -->
+          <label style="margin-left: auto; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--primary);">
+            <input type="checkbox" id="post-anonymous" style="accent-color: var(--primary);" />
+            🕵️ 匿名发布
+          </label>
         </div>
+        <!-- 下面保持原样 -->
 
         <div class="post-input-wrap">
           <textarea id="post-content" placeholder="说点什么吧……（Ctrl+Enter 快速发布，输入 @ 可提及同学）"

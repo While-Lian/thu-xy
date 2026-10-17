@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>作业收集箱</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>📦 作业 / 资料收集箱</h1>
+      <p class="page-desc">统一收集作业、截图与资料，告别群聊刷屏</p>
+    </header>
+
+    <section class="block">
+      <div class="block-header">
+        <h2 class="block-title">收集任务列表</h2>
+        <button id="hw-add-btn" class="btn btn-primary btn-small admin-only" style="display:none;">＋ 发布收集任务</button>
+      </div>
+      <div id="hw-list" class="hw-list">
+        <div class="announce-empty">加载中…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 作业收集箱</p>
+  </footer>
+
+  <!-- 发布任务弹窗 -->
+  <div id="hw-task-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 480px;">
+      <h3>发布收集任务</h3>
+      <div class="form-grid">
+        <label>任务标题</label>
+        <input type="text" id="hw-task-title" placeholder="如：青年大学习截图 / 实验报告" maxlength="50" />
+        <label>说明</label>
+        <input type="text" id="hw-task-desc" placeholder="选填，如：请以PDF格式提交" maxlength="100" />
+        <label>截止时间</label>
+        <input type="datetime-local" id="hw-task-deadline" />
+      </div>
+      <p id="hw-task-msg" class="form-msg"></p>
+      <div class="modal-buttons">
+        <button id="hw-task-save" class="btn btn-primary">发布</button>
+        <button id="hw-task-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任务详情弹窗 -->
+  <div id="hw-detail-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 600px;">
+      <button id="hw-detail-close" style="position:absolute; top:10px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#999;">×</button>
+      <h3 id="hw-detail-title">任务详情</h3>
+      <p id="hw-detail-desc" style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;"></p>
+      
+      <!-- 统计区 -->
+      <div style="background:var(--primary-lighter); padding:12px; border-radius:8px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+        <div>提交进度：<span id="hw-progress" style="font-weight:600; color:var(--primary);">0 / 0</span></div>
+        <button id="hw-export-unsubmitted" class="btn btn-ghost btn-small" style="display:none;">📥 导出未交名单</button>
+      </div>
+
+      <!-- 提交操作区 -->
+      <div id="hw-submit-area" style="margin-bottom:20px;">
+        <div id="hw-my-status" style="font-size:14px; margin-bottom:8px;"></div>
+        <div style="display:flex; gap:10px;">
+          <input type="file" id="hw-file-input" style="display:none;" />
+          <button id="hw-upload-btn" class="btn btn-primary">上传/重新上传文件</button>
+          <button id="hw-del-mine-btn" class="btn btn-danger" style="display:none;">删除我的提交</button>
+        </div>
+        <div id="hw-upload-msg" style="font-size:12px; color:var(--text-tertiary); margin-top:6px;"></div>
+      </div>
+
+      <!-- 提交名单 -->
+      <h4 style="margin-bottom:10px; font-size:14px;">已交名单</h4>
+      <div id="hw-submissions" class="hw-submissions" style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+        <div class="announce-empty">暂无提交</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/homework.js"></script>
+</body>
+</html>
