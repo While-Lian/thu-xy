@@ -19,15 +19,34 @@
   });
 
   function init() {
+    // 绑定导出成员名单
+    document.getElementById('export-members-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('export-members-btn');
+      btn.disabled = true; btn.textContent = '导出中…';
+      try {
+        const { data, error } = await db.rpc('list_class_members');
+        if (error) throw error;
+        if (!data || !data.length) throw new Error('暂无成员数据');
+
+        const headers = ['昵称', '身份', '邮箱', '注册时间'];
+        const rows = data.map(m => [
+          m.nickname,
+          U.roleName(m.role),
+          m.email || '',
+          U.formatTime(m.created_at)
+        ]);
+        
+        U.exportCSV('班级成员名单.csv', headers, rows);
+      } catch (err) {
+        alert('导出失败：' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = '📥 导出成员名单';
+      }
+    });
+
     Promise.all([
       loadOverview(),
-      loadDailyChart(),
-      loadPostRanking(),
-      loadFileRanking(),
-      loadActivityStats()
-    ]).catch(e => console.error(e));
-  }
-
+      // ...
   /* ============ 整体概览 ============ */
   async function loadOverview() {
     const el = document.getElementById('stats-cards');

@@ -409,6 +409,7 @@
 
     const manageBtns = canManage(c)
       ? `<button class="pe-btn" data-copy-chain="${c.id}" title="复制名单">📋</button>
+         <button class="pe-btn" data-export-chain="${c.id}" title="导出 CSV">📥</button>
          <button class="pe-btn" data-toggle-close-chain="${c.id}" title="${c.closed ? '重新开放' : '提前关闭'}">${c.closed ? '↺' : '🔒'}</button>
          <button class="pe-btn pe-btn-danger" data-del-chain="${c.id}" title="删除">🗑️</button>`
       : '';
@@ -477,6 +478,25 @@
           () => alert('已复制到剪贴板'),
           () => alert('复制失败，请手动截图')
         );
+      });
+    });
+
+    document.querySelectorAll('[data-export-chain]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = chains.find(x => String(x.id) === btn.dataset.exportChain);
+        if (!c) return;
+        const entries = allChainEntries[c.id] || [];
+        if (!entries.length) return alert('还没有人接龙');
+
+        const headers = ['序号', '姓名', c.remark_label || '备注', '接龙时间'];
+        const rows = entries.map((e, i) => [
+          i + 1,
+          e.user_name,
+          e.remark || '',
+          U.formatTime(e.joined_at)
+        ]);
+        
+        U.exportCSV(`【${c.title}】接龙名单.csv`, headers, rows);
       });
     });
     document.querySelectorAll('[data-del-chain]').forEach(btn => {
