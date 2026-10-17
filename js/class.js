@@ -319,6 +319,7 @@
     }
 
     /* ============ 头像墙 + 名片（容错处理） ============ */
+        /* ============ 头像墙 + 名片（容错处理） ============ */
     async function loadMemberWall() {
       const wall = document.getElementById('member-wall');
       if (!wall) return;
@@ -328,14 +329,8 @@
       } catch (e) {}
 
       try {
-        const targetClassId = classId;
-
-        // 👇 直接查表，并用 or 语法包容户口和活跃班级，防止 RPC 报错卡死
-        const { data, error } = await db
-          .from('profiles')
-          .select('id, nickname, role, avatar_url, created_at, wechat, phone')
-          .or(`class_id.eq.${targetClassId},active_class_id.eq.${targetClassId}`)
-          .order('created_at', { ascending: true });
+        // 👇 改用 RPC，彻底解决老师跨班不显示的漏洞
+        const { data, error } = await db.rpc('list_class_members_public');
 
         if (error) throw error;
         
@@ -368,7 +363,6 @@
         wall.innerHTML = `<div class="member-wall-empty" style="color:#e53935;">加载失败: ${U.escapeHtml(err.message || '网络异常')}</div>`; 
       }
     }
-
     function showMemberCard(m) {
       const cardModal = document.getElementById('card-modal');
       const avEl = document.getElementById('card-avatar');
