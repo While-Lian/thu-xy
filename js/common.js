@@ -1,4 +1,4 @@
-/* 通用工具 & 顶栏 v3.0.1 */
+/* 通用工具 & 顶栏 v3.4.1 */
 
 window.Utils = {
   escapeHtml(s) {
@@ -120,7 +120,6 @@ window.Topbar = {
     const U = window.Utils;
     const currentPage = location.pathname.split('/').pop() || 'index.html';
 
-    // ===== 未加入班级 =====
     if (!u.class_id) {
       bar.innerHTML = `
         <div class="topbar-inner">
@@ -141,15 +140,16 @@ window.Topbar = {
                 <a href="#" id="topbar-logout">退出登录</a>
               </div>
             </div>
+            <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
           </div>
         </div>
       `;
       this.bindUserEvents();
+      this.renderBottomNav();
+      this.renderMobileDrawer();
       return;
     }
 
-    // ===== 已加入班级 =====
-    // 主链接（6 个常用项）
     const mainLinks = [
       { href: 'class.html',      label: '班级事务', page: 'class.html' },
       { href: 'forum.html',      label: '班级论坛', page: 'forum.html' },
@@ -172,7 +172,6 @@ window.Topbar = {
     }
 
     const isAdminPage = ['admin.html', 'requests.html', 'stats.html'].includes(currentPage);
-
     const roleTagHtml = u.role !== 'student'
       ? `<span class="topbar-role topbar-role-${u.role}">${U.roleName(u.role)}</span>`
       : '';
@@ -184,7 +183,7 @@ window.Topbar = {
           ${pendingCount > 0 ? `<span class="topbar-badge">${pendingCount}</span>` : ''}
           <span class="topbar-caret">▾</span>
         </button>
-                <div class="topbar-dropdown topbar-manage-dropdown" id="topbar-manage-dropdown">
+        <div class="topbar-dropdown topbar-manage-dropdown" id="topbar-manage-dropdown">
           <a href="admin.html">👥 用户管理</a>
           <a href="requests.html">📨 申请审批 ${pendingCount > 0 ? `<span class="topbar-badge-inline">${pendingCount}</span>` : ''}</a>
           <a href="stats.html">📊 数据统计</a>
@@ -216,12 +215,16 @@ window.Topbar = {
               <a href="#" id="topbar-logout">🚪 退出登录</a>
             </div>
           </div>
+          <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
         </div>
       </div>
     `;
 
     this.bindUserEvents();
     this.bindManageEvents();
+    this.renderBottomNav();
+    this.renderMobileDrawer();
+    this.bindMobileMenu();
   },
 
   avatarHtml(u) {
@@ -235,7 +238,6 @@ window.Topbar = {
     const userEl = document.getElementById('topbar-user');
     const dropdown = document.getElementById('topbar-dropdown');
     if (!userEl || !dropdown) return;
-
     userEl.addEventListener('click', (e) => {
       e.stopPropagation();
       const manageDropdown = document.getElementById('topbar-manage-dropdown');
@@ -243,7 +245,6 @@ window.Topbar = {
       dropdown.classList.toggle('show');
     });
     document.addEventListener('click', () => dropdown.classList.remove('show'));
-
     document.getElementById('topbar-logout').addEventListener('click', async (e) => {
       e.preventDefault();
       await window.supabaseClient.auth.signOut();
@@ -255,7 +256,6 @@ window.Topbar = {
     const manageEl = document.getElementById('topbar-manage');
     const dropdown = document.getElementById('topbar-manage-dropdown');
     if (!manageEl || !dropdown) return;
-
     const btn = manageEl.querySelector('.topbar-manage-btn');
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -264,5 +264,118 @@ window.Topbar = {
       dropdown.classList.toggle('show');
     });
     document.addEventListener('click', () => dropdown.classList.remove('show'));
+  },
+
+  renderBottomNav() {
+    const u = window.currentUser;
+    if (!u) return;
+    const exist = document.getElementById('mobile-bottom-nav');
+    if (exist) exist.remove();
+
+    const nav = document.createElement('nav');
+    nav.id = 'mobile-bottom-nav';
+    nav.className = 'mobile-bottom-nav';
+    const currentPage = location.pathname.split('/').pop() || 'index.html';
+
+    if (!u.class_id) {
+      nav.innerHTML = `
+        <a href="classes.html" class="mbn-item${currentPage === 'classes.html' ? ' active' : ''}"><span class="mbn-icon">🏫</span><span class="mbn-label">广场</span></a>
+        <a href="profile.html" class="mbn-item${currentPage === 'profile.html' ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>
+      `;
+    } else {
+      nav.innerHTML = `
+        <a href="class.html" class="mbn-item${currentPage === 'class.html' ? ' active' : ''}"><span class="mbn-icon">📅</span><span class="mbn-label">事务</span></a>
+        <a href="forum.html" class="mbn-item${currentPage === 'forum.html' ? ' active' : ''}"><span class="mbn-icon">💬</span><span class="mbn-label">论坛</span></a>
+        <a href="activities.html" class="mbn-item${currentPage === 'activities.html' ? ' active' : ''}"><span class="mbn-icon">📊</span><span class="mbn-label">活动</span></a>
+        <a href="profile.html" class="mbn-item${['profile.html', 'personal.html', 'files.html', 'photos.html', 'admin.html', 'requests.html', 'stats.html'].includes(currentPage) ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>
+      `;
+    }
+    document.body.appendChild(nav);
+  },
+
+  renderMobileDrawer() {
+    const u = window.currentUser;
+    if (!u) return;
+    const exist = document.getElementById('mobile-drawer');
+    if (exist) exist.remove();
+
+    const U = window.Utils;
+    const currentPage = location.pathname.split('/').pop() || 'index.html';
+    const isAdmin = U.isAdminRole(u.role);
+    
+    const links = [];
+    if (u.class_id) {
+      links.push(
+        { href: 'class.html',      label: '📅 班级事务', page: 'class.html' },
+        { href: 'forum.html',      label: '💬 班级论坛', page: 'forum.html' },
+        { href: 'activities.html', label: '📊 活动统计', page: 'activities.html' },
+        { href: 'files.html',      label: '📁 班级文件', page: 'files.html' },
+        { href: 'photos.html',     label: '📸 班级相册', page: 'photos.html' },
+        { href: 'personal.html',   label: '📝 个人管理', page: 'personal.html' },
+        { href: 'profile.html',    label: '👤 个人中心', page: 'profile.html' },
+        { href: 'classes.html',    label: '🏫 班级广场', page: 'classes.html' }
+      );
+      if (isAdmin) {
+        links.push(
+          { href: 'admin.html',    label: '👥 用户管理', page: 'admin.html' },
+          { href: 'requests.html', label: '📨 申请审批', page: 'requests.html' },
+          { href: 'stats.html',    label: '📊 数据统计', page: 'stats.html' }
+        );
+      }
+    } else {
+      links.push(
+        { href: 'classes.html', label: '🏫 班级广场', page: 'classes.html' },
+        { href: 'profile.html', label: '👤 个人中心', page: 'profile.html' }
+      );
+    }
+
+    const drawer = document.createElement('div');
+    drawer.id = 'mobile-drawer';
+    drawer.className = 'mobile-drawer';
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'mobile-drawer-overlay';
+    overlay.id = 'mobile-drawer-overlay';
+    drawer.appendChild(overlay);
+
+    const panel = document.createElement('div');
+    panel.className = 'mobile-drawer-panel';
+    
+    const roleName = U.roleName(u.role);
+    const initial = (u.nickname || '?').charAt(0).toUpperCase();
+    const avatarHtml = u.avatar_url ? `<img src="${u.avatar_url}" alt="" />` : `<span class="mdb-avatar-default">${U.escapeHtml(initial)}</span>`;
+
+    panel.innerHTML = `
+      <div class="mobile-drawer-header">
+        <div class="mdb-avatar">${avatarHtml}</div>
+        <div class="mdb-info">
+          <div class="mdb-name">${U.escapeHtml(u.nickname)}</div>
+          <div class="mdb-role">${roleName}</div>
+        </div>
+      </div>
+      <div class="mobile-drawer-links">
+        ${links.map(l => `<a href="${l.href}" class="mdb-link${currentPage === l.page ? ' active' : ''}">${l.label}</a>`).join('')}
+      </div>
+      <div class="mobile-drawer-footer">
+        <button id="mobile-drawer-logout" class="mdb-logout-btn">退出登录</button>
+      </div>
+    `;
+    
+    drawer.appendChild(panel);
+    document.body.appendChild(drawer);
+
+    document.getElementById('mobile-drawer-logout').addEventListener('click', async () => {
+      await window.supabaseClient.auth.signOut();
+      location.href = 'login.html';
+    });
+  },
+
+  bindMobileMenu() {
+    const btn = document.getElementById('mobile-menu-btn');
+    const drawer = document.getElementById('mobile-drawer');
+    const overlay = document.getElementById('mobile-drawer-overlay');
+    if (!btn || !drawer || !overlay) return;
+    btn.addEventListener('click', () => drawer.classList.add('open'));
+    overlay.addEventListener('click', () => drawer.classList.remove('open'));
   }
 };

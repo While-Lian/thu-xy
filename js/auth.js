@@ -1,5 +1,5 @@
 /**
- * 认证模块 v2.5.0
+ * 认证模块 v3.4.0
  */
 (function () {
   'use strict';
@@ -56,76 +56,38 @@
       const nickname = $('reg-nickname').value.trim();
       const inviteCode = ($('reg-invite-code')?.value || '').trim();
 
-      if (!email || !password || !nickname) {
-        return setMsg('请填写完整信息', 'error');
-      }
+      if (!email || !password || !nickname) return setMsg('请填写完整信息', 'error');
       if (password.length < 6) return setMsg('密码至少 6 位', 'error');
-      if (nickname.length < 1 || nickname.length > 20) return setMsg('昵称长度 1-20 字', 'error');
 
       setMsg('检查中…');
       try {
-        const { data: nicknameOk, error: nickErr } = await db.rpc(
-          'check_nickname_available', { p_nickname: nickname }
-        );
-        if (!nickErr && nicknameOk === false) {
-          return setMsg('昵称「' + nickname + '」已被使用，请换一个', 'error');
-        }
-      } catch (err) { console.warn('昵称检查异常', err); }
-
-      try {
-        const { data: emailOk, error: emailErr } = await db.rpc(
-          'check_email_available', { p_email: email }
-        );
-        if (!emailErr && emailOk === false) {
-          return setMsg('该邮箱已被注册，请直接登录或换一个邮箱', 'error');
-        }
-      } catch (err) { console.warn('邮箱检查异常', err); }
+        const { data: nicknameOk } = await db.rpc('check_nickname_available', { p_nickname: nickname });
+        if (nicknameOk === false) return setMsg('昵称已被使用，请换一个', 'error');
+        const { data: emailOk } = await db.rpc('check_email_available', { p_email: email });
+        if (emailOk === false) return setMsg('该邮箱已被注册，请直接登录', 'error');
+      } catch (err) { console.warn(err); }
 
       setMsg('注册中…');
-
       const metaData = { nickname };
       if (inviteCode) metaData.invite_code = inviteCode;
 
-      let signUpResult;
       try {
-        signUpResult = await db.auth.signUp({
-          email, password,
-          options: { data: metaData }
-        });
+        const { data, error } = await db.auth.signUp({ email, password, options: { data: metaData } });
+        if (error) throw error;
+
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          return setMsg('该邮箱已被注册，请直接登录', 'error');
+        }
+
+        if (data.session) {
+          setMsg('注册成功，正在进入…', 'success');
+          setTimeout(() => { location.href = 'classes.html'; }, 800);
+        } else {
+          setMsg('注册成功！请登录', 'success');
+          setTimeout(() => { showView('login'); $('login-email').value = email; }, 1200);
+        }
       } catch (err) {
-        return setMsg('注册失败：' + (err.message || '未知错误'), 'error');
-      }
-
-      const { data, error } = signUpResult;
-
-      if (error) {
-        const msg = (error.message || '').toLowerCase();
-        if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
-          return setMsg('该邮箱已被注册，请直接登录或换一个邮箱', 'error');
-        }
-        if (msg.includes('rate limit')) {
-          return setMsg('注册过于频繁，请稍后再试', 'error');
-        }
-        return setMsg('注册失败：' + error.message, 'error');
-      }
-
-      if (
-        data && data.user &&
-        Array.isArray(data.user.identities) &&
-        data.user.identities.length === 0
-      ) {
-        return setMsg('该邮箱已被注册，请直接登录或换一个邮箱', 'error');
-      }
-
-      if (data && data.session) {
-        setMsg('注册成功，正在进入…', 'success');
-        setTimeout(() => { location.href = 'classes.html'; }, 800);
-      } else {
-        setMsg('注册成功！请用刚填的邮箱和密码登录', 'success');
-        setTimeout(() => {
-          showView('login');
-          $('login-email').value = email;
-        }, 1200);
+        setMsg('注册失败：' + err.message, 'error');
       }
     });
   }
@@ -157,7 +119,6 @@
     }
 
     if (window.Topbar) window.Topbar.render();
-
     window.dispatchEvent(new CustomEvent('user-ready', { detail: window.currentUser }));
   }
 
@@ -169,10 +130,8 @@
         id: user.id,
         email: user.email,
         nickname: user.user_metadata?.nickname || '同学',
-        class_id: null,
-        grade: null,
-        role: 'student',
-        avatar_url: null
+        class_id: null, grade: null, role: 'student', avatar_url: null,
+        wechat: null, phone: null
       };
     } else {
       window.currentUser = {
@@ -182,7 +141,9 @@
         class_id: data.class_id || null,
         grade: data.grade || null,
         role: data.role,
-        avatar_url: data.avatar_url || null
+        avatar_url: data.avatar_url || null,
+        wechat: data.wechat || null,
+        phone: data.phone || null
       };
     }
   }

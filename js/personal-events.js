@@ -1,4 +1,4 @@
-/* 个人日程 + DDL v2.0.0 */
+/* 个人日程 + DDL + ICS导出 v3.4.0 */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -6,8 +6,8 @@
   const U = window.Utils;
 
   let currentUser = null;
-  let items = [];        // 全部（event + ddl）
-  let activeTab = 'event'; // 'event' | 'ddl'
+  let items = [];
+  let activeTab = 'event';
 
   window.addEventListener('user-ready', (e) => {
     currentUser = e.detail;
@@ -19,6 +19,7 @@
     if (!listEl) return;
 
     const addBtn = document.getElementById('pe-add-btn');
+    const exportBtn = document.getElementById('pe-export-btn'); // 新增导出按钮
     const tabBtns = document.querySelectorAll('.pe-tab');
 
     tabBtns.forEach(btn => {
@@ -31,6 +32,11 @@
     });
 
     addBtn.addEventListener('click', () => openModal(null));
+    
+    // 绑定导出事件
+    if (exportBtn) {
+      exportBtn.addEventListener('click', exportToICS);
+    }
 
     updateAddBtnLabel();
     loadItems();
@@ -41,6 +47,65 @@
     if (addBtn) {
       addBtn.textContent = activeTab === 'event' ? '＋ 添加日程' : '＋ 添加 DDL';
     }
+  }
+
+  /* ============ ICS 导出 ============ */
+  function exportToICS() {
+    if (!items.length) return alert('没有日程或 DDL 可以导出');
+    
+    // 构造 ICS 文件内容
+    let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//THU-XY//Personal Events//CN\r\nCALSCALE:GREGORIAN\r\n";
+
+    items.forEach(item => {
+      // 日期格式化 YYYYMMDD
+      const dateStr = item.event_date.replace(/-/g, '');
+      
+      // 解析时间，默认早上 9:00 - 10:00
+      let dtStart = `${dateStr}T090000`; 
+      let dtEnd = `${dateStr}T100000`;
+      
+      if (item.event_time) {
+        const match = item.event_time.match(/(\d{2}):(\d{2})/);
+        if (match) {
+          dtStart = `${dateStr}T${match[1]}${match[2]}00`;
+          const endHour = String((parseInt(match[1]) + 1) % 24).padStart(2, '0');
+          dtEnd = `${dateStr}T${endHour}${match[2]}00`;
+        }
+      } else if (item.type === 'ddl') {
+        // 如果是没有具体时间的 DDL，默认设为当天的 23:59
+        dtStart = `${dateStr}T235900`;
+        dtEnd = `${dateStr}T235959`;
+      }
+
+      // 构造事件标题
+      const summary = item.type === 'ddl' ? `[DDL] ${item.title}` : `[日程] ${item.title}`;
+      const description = item.remark || '';
+      const location = item.location || '';
+
+      ics += "BEGIN:VEVENT\r\n";
+      ics += `UID:${Date.now()}-${item.id}@thu-xy\r\n`;
+      // 生成标准的 UTC 时间戳
+      ics += `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
+      ics += `DTSTART:${dtStart}\r\n`;
+      ics += `DTEND:${dtEnd}\r\n`;
+      ics += `SUMMARY:${summary}\r\n`;
+      if (location) ics += `LOCATION:${location}\r\n`;
+      if (description) ics += `DESCRIPTION:${description.replace(/\n/g, '\\n')}\r\n`;
+      ics += "END:VEVENT\r\n";
+    });
+
+    ics += "END:VCALENDAR";
+
+    // 触发下载
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `THU-XY_日历_${new Date().getTime()}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   /* ============ 加载 ============ */
@@ -77,7 +142,6 @@
     const today = todayStr();
 
     if (activeTab === 'event') {
-      // 日程：分为即将到来 / 已过去
       const upcoming = filtered.filter(i => i.event_date >= today);
       const past = filtered.filter(i => i.event_date < today);
       let html = '';
@@ -91,7 +155,6 @@
       }
       listEl.innerHTML = html;
     } else {
-      // DDL：未完成在上，已完成折叠
       const undone = filtered.filter(i => !i.completed);
       const done = filtered.filter(i => i.completed);
       let html = '';
@@ -225,7 +288,6 @@
     document.getElementById('pe-f-location').value = item ? (item.location || '') : '';
     document.getElementById('pe-f-remark').value = item ? (item.remark || '') : '';
 
-    // 根据类型调整文案
     const dateLabel = document.querySelector('label[for="pe-f-date"]');
     const timeLabel = document.querySelector('label[for="pe-f-time"]');
     if (dateLabel) dateLabel.textContent = type === 'ddl' ? '截止日期' : '日期';
@@ -234,7 +296,6 @@
     document.getElementById('pe-msg').textContent = '';
     document.getElementById('pe-msg').className = 'form-msg';
     modal.style.display = 'flex';
-
     document.getElementById('pe-f-title').focus();
   }
 
@@ -257,7 +318,6 @@
     return Math.round((target - today) / 86400000);
   }
 
-  /* ============ 事件绑定（全局一次） ============ */
   document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('pe-modal');
     if (!modal) return;
@@ -283,14 +343,7 @@
       saveBtn.textContent = '保存中…';
 
       try {
-        const payload = {
-          type,
-          title,
-          event_date: date,
-          event_time: time,
-          location,
-          remark
-        };
+        const payload = { type, title, event_date: date, event_time: time, location, remark };
         if (editingId) {
           const { error } = await db.from('personal_events').update(payload).eq('id', editingId);
           if (error) throw error;
@@ -300,7 +353,7 @@
           if (error) throw error;
         }
         closeModal();
-        activeTab = type; // 切换 tab 到刚保存的类型
+        activeTab = type;
         document.querySelectorAll('.pe-tab').forEach(b => {
           b.classList.toggle('active', b.dataset.tab === type);
         });
