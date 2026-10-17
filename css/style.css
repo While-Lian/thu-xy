@@ -4539,3 +4539,47 @@ mark {
   opacity: 1;
   transform: scale(1.15);
 }
+
+/* ============================================================
+ * 终极修复：夜间模式底层变量与新增组件适配
+ * ============================================================ */
+[data-theme="dark"] {
+  --primary: #9d4edd;
+  --primary-dark: #7b2cbf;
+  --primary-hover: #b56ee6;
+  --primary-light: #3c096c;
+  --primary-lighter: #1a1a2e;
+  --border: #2d2d44;
+  --border-light: #22223b;
+  --text: #e0e0e0;
+  --text-secondary: #a0a0b8;
+  --text-tertiary: #70708f;
+  --bg: #12121c;
+  --white: #1e1e2d; /* 所有卡片背景变暗 */
+  --danger: #ef5350;
+  --danger-light: #2d1b1b;
+  --success: #4caf50;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* 强制各种输入框背景变暗 */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* 适配新加组件的背景 */
+[data-theme="dark"] .hw-card,
+[data-theme="dark"] .finance-item,
+[data-theme="dark"] .feedback-item,
+[data-theme="dark"] .group-card,
+[data-theme="dark"] .lottery-display,
+[data-theme="dark"] .lottery-controls {
+  background: var(--white) !important;
+  color: var(--text) !important;
+}
