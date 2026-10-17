@@ -55,8 +55,26 @@
         <span class="about-label">开发者：</span>
         <span id="about-devs-list"></span>
       </div>
-      <div class="changelog">
+
+
+
+            <div class="changelog">
         <div class="changelog-title">📝 更新日志</div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v3.8.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>多班管理（老师专属）</b>：老师/辅导员现在可以同时管理多个班级。在“班级广场”无需退出，即可直接创建新班、申请加入其他班，或一键切换工作台</li>
+            <li><b>全站数据同步切换</b>：彻底修复了切换班级后论坛、公告、文件不跟着切换的 Bug。现在切换班级后，全站数据瞬间无缝切换</li>
+            <li><b>账号体系底层重构</b>：分离了“户口班级”与“活跃班级”。老师离开 A 班去管理 B 班时，A 班人数不再减少，老师依然保留在 A 班的名册中</li>
+            <li><b>数据导出助手</b>：班委在“数据统计”和“接龙”模块，可一键导出成员名单、接龙名单为 CSV (Excel 可打开) 文件，期末整理材料更轻松</li>
+            <li><b>相册自动压缩</b>：补齐了相册上传的自动压缩功能（长边压缩至 1024p），进一步避免 Supabase 空间爆满</li>
+            <li><b>系统容错与体验修复</b>：修复了数据统计模块、成员墙偶发“卡在加载中”的问题；清理了底层几十处冗余代码</li>
+          </ul>
+        </div>
 
         <div class="changelog-entry">
           <div class="changelog-head">
@@ -64,37 +82,11 @@
             <span class="changelog-date">2026-10</span>
           </div>
           <ul class="changelog-list">
-            <li><b>存储优化</b>：图片上传全面支持前端自动压缩（头像 512p，图片 1024p），极大节省服务器空间</li>
-            <li><b>空间清理</b>：删帖/换头像时自动连带清理云端旧图片，杜绝“幽灵文件”白占空间</li>
+            <li><b>存储优化</b>：图片上传全面支持前端自动压缩，删帖/换头像时自动连带清理云端旧图片，杜绝“幽灵文件”</li>
             <li><b>上传限制</b>：班级文件限制为 15MB 以内，并禁止上传视频和压缩包，保障网盘容量</li>
-            <li><b>懒加载</b>：全站图片加入懒加载机制，流量消耗大幅降低，网速更丝滑</li>
             <li><b>个人名片</b>：在个人中心可设置微信号和手机号，点击班级成员头像即可查看名片</li>
             <li><b>一键日程</b>：班级事务新增“📅”按钮，点击即可将活动一键存入个人日程</li>
             <li><b>日历导出</b>：个人管理支持一键导出 ICS 日历文件，轻松同步至手机自带日历</li>
-            <li><b>体验修复</b>：彻底修复了首次进入某些页面会卡在“加载中”的时序 Bug</li>
-          </ul>
-        </div>
-
-        <div class="changelog-entry">
-          <div class="changelog-head">
-            <span class="changelog-version">v3.2.0</span>
-            <span class="changelog-date">2026-10</span>
-          </div>
-          <ul class="changelog-list">
-            <li><b>论坛分页</b>：首屏只加载 20 条，底部“加载更多”翻页</li>
-            <li><b>骨架屏</b>：论坛、文件、成员墙加载时显示灰色占位卡片</li>
-          </ul>
-        </div>
-
-        <div class="changelog-entry">
-          <div class="changelog-head">
-            <span class="changelog-version">v3.1.0</span>
-            <span class="changelog-date">2026-10</span>
-          </div>
-          <ul class="changelog-list">
-            <li><b>帖子图片</b>：发帖可附带最多 9 张图片，点击全屏预览</li>
-            <li><b>@提及</b>：输入 @ 弹出成员列表，被提及者收到通知</li>
-            <li><b>数据统计</b>：班委/老师可查看班级活跃度、发帖排行、活动参与率</li>
           </ul>
         </div>
 
@@ -107,28 +99,6 @@
             <li><b>公告系统</b>：发布公告，支持置顶、编辑、删除</li>
             <li><b>班级相册</b>：照片墙，支持批量上传和预览</li>
             <li><b>顶栏重设计</b>：主链接保留，管理项收进下拉菜单，支持移动端底部导航和侧边抽屉</li>
-          </ul>
-        </div>
-
-        <div class="changelog-entry">
-          <div class="changelog-head">
-            <span class="changelog-version">v2.5.0</span>
-            <span class="changelog-date">2026-10</span>
-          </div>
-          <ul class="changelog-list">
-            <li><b>通知中心</b>：申请 / 批准 / 拒绝通知，顶栏红点徽章</li>
-            <li><b>班级广场</b>：创建班级、申请加入、审批、退出、删除班级</li>
-            <li><b>文件分类</b>：上传时填文件夹，顶部按文件夹筛选</li>
-            <li><b>帖子搜索 / 嵌套回复</b>：论坛支持关键词高亮和楼中楼</li>
-          </ul>
-        </div>
-
-        <div class="changelog-entry">
-          <div class="changelog-head">
-            <span class="changelog-version">v2.0.0</span>
-            <span class="changelog-date">2026-10</span>
-          </div>
-          <ul class="changelog-list">
             <li><b>活动统计</b>：时间投票（When2meet 风格网格）+ 接龙</li>
             <li><b>个人日程</b>：日程 + DDL，首页红点提醒</li>
           </ul>
@@ -136,15 +106,16 @@
 
         <div class="changelog-entry changelog-old">
           <div class="changelog-head">
-            <span class="changelog-version">v1.0.0</span>
+            <span class="changelog-version">v1.0.0 - v2.5.0</span>
             <span class="changelog-date">2026-10</span>
           </div>
           <ul class="changelog-list">
-            <li><b>账号系统</b>：邮箱注册/登录，三类身份（学生 / 班委 / 老师）</li>
-            <li><b>班级事务</b>：三种视图，管理员可编辑</li>
-            <li><b>班级论坛</b>：发帖 / 回复 / 点赞 / 实时同步</li>
-            <li><b>班级文件</b>：拖拽上传，全班可看</li>
-            <li><b>个人中心</b>：头像 / 昵称 / 密码 / 注销</li>
+            <li><b>班级事务</b>：三种视图，管理员可编辑，活动报名</li>
+            <li><b>班级论坛</b>：发帖 / 回复 / 点赞 / 嵌套回复 / 三级论坛</li>
+            <li><b>班级文件</b>：拖拽上传，文件夹分类</li>
+            <li><b>通知中心</b>：申请、审批、@提及通知</li>
+            <li><b>班级广场</b>：创建、申请、审批、退出、删除班级</li>
+            <li><b>账号系统</b>：三类身份（学生 / 班委 / 老师）、密码重置</li>
           </ul>
         </div>
       </div>
