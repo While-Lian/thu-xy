@@ -29,7 +29,7 @@
           <thead>
             <tr>
               <th>周次</th><th>活动标题</th><th>时间</th><th>地点</th>
-              <th>主要要求</th><th>主要负责人</th><th>次要负责人</th><th>备注</th><th>操作</th>
+              <th>主要要求</th><th>主要负责人</th><th>次要负责人</th><th>备注</th><th>参与</th><th>操作</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -42,9 +42,7 @@
       <div id="member-wall" class="member-wall">
         <div class="member-wall-empty">加载中…</div>
       </div>
-  </section>
-
-
+    </section>
 
     <section class="block">
       <div class="block-header">
@@ -71,7 +69,7 @@
             <thead>
               <tr>
                 <th>周次</th><th>活动标题</th><th>时间</th><th>地点</th>
-                <th>主要要求</th><th>主要负责人</th><th>次要负责人</th><th>备注</th><th>操作</th>
+                <th>主要要求</th><th>主要负责人</th><th>次要负责人</th><th>备注</th><th>参与</th><th>操作</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -97,7 +95,6 @@
           <div id="f-weeks" class="week-chips"></div>
           <div class="week-chips-helper">
             <button type="button" id="weeks-clear" class="link-btn">清空</button>
-            <span class="helper-tip">点击数字选择，可跨周多选</span>
           </div>
         </div>
         <label>活动标题</label><input type="text" id="f-title" />
@@ -107,10 +104,38 @@
         <label>主要负责人</label><div id="f-main-owner" class="owner-list"></div>
         <label>次要负责人</label><div id="f-sub-owners" class="owner-list"></div>
         <label>备注</label><input type="text" id="f-remark" />
+        <label>需要报名</label>
+        <div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="f-needs-signup" />
+            <span>启用后，同学可在列表中表态参与意愿</span>
+          </label>
+        </div>
       </div>
       <div class="modal-buttons">
         <button id="modal-save" class="btn btn-primary">保存</button>
         <button id="modal-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 名片弹窗 -->
+  <div id="card-modal" class="modal" style="display:none;">
+    <div class="modal-box" style="width: 320px; text-align: center; position: relative;">
+      <button id="card-close" style="position:absolute; top:10px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#999;">×</button>
+      <div id="card-avatar" style="width:80px; height:80px; border-radius:50%; margin: 0 auto 12px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:600; overflow:hidden;"></div>
+      <h3 id="card-name" style="margin-bottom:4px; font-size:20px;"></h3>
+      <div id="card-role" style="font-size:12px; color:var(--text-secondary); margin-bottom:20px;"></div>
+      
+      <div style="text-align:left; background:#fafafa; padding:14px; border-radius:8px; font-size:14px; border:1px solid #eee;">
+        <div style="margin-bottom:10px; display:flex; justify-content:space-between;">
+          <span style="color:#888;">微信号</span> 
+          <span id="card-wechat" style="font-weight:500; font-family:monospace;"></span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#888;">手机号</span> 
+          <span id="card-phone" style="font-weight:500; font-family:monospace;"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -120,7 +145,7 @@
   <script src="js/config.js"></script>
   <script src="js/common.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/class.js"></script>
   <script src="js/notifications.js"></script>
+  <script src="js/class.js"></script>
 </body>
 </html>

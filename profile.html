@@ -49,6 +49,19 @@
       </div>
     </section>
 
+    <!-- 新增：名片设置 -->
+    <section class="block">
+      <h2 class="block-title">我的名片</h2>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">同学们点击你的头像时可以查看以下信息，留空则显示"未填写"。</p>
+      <div class="form-stack" style="max-width:400px;">
+        <input type="text" id="wechat-input" placeholder="微信号（选填）" maxlength="30" />
+        <input type="text" id="phone-input" placeholder="手机号（选填）" maxlength="20" />
+        <div class="form-inline-right">
+          <button id="save-contact" class="btn btn-primary">保存名片</button>
+        </div>
+      </div>
+    </section>
+
     <section class="block">
       <h2 class="block-title">修改密码</h2>
       <div class="form-stack">
@@ -64,14 +77,10 @@
 
     <section class="block danger-zone">
       <h2 class="block-title danger-title">危险区域</h2>
-
       <div class="danger-row">
         <div class="danger-info">
           <div class="danger-title-text">退出当前班级</div>
-          <div class="danger-desc">
-            退出后你将从本班移除，帖子/文件等仍然保留。<br />
-            你可以重新申请加入或加入其他班级。
-          </div>
+          <div class="danger-desc">退出后你将从本班移除，帖子/文件等仍然保留。</div>
         </div>
         <button id="leave-class-btn" class="btn btn-danger">退出班级</button>
       </div>
@@ -79,10 +88,7 @@
       <div class="danger-row" style="margin-top:20px;">
         <div class="danger-info">
           <div class="danger-title-text">注销账号</div>
-          <div class="danger-desc">
-            注销后，你的账号将被永久删除，无法恢复。<br />
-            你发布的帖子和回复会保留，但作者会显示为"已注销用户"。
-          </div>
+          <div class="danger-desc">注销后账号永久删除，无法恢复。</div>
         </div>
         <button id="delete-account-btn" class="btn btn-danger">注销账号</button>
       </div>
@@ -93,17 +99,14 @@
     <p>THU-XY · 个人中心</p>
   </footer>
 
-  <!-- 注销确认弹窗 -->
   <div id="delete-modal" class="modal" style="display: none;">
     <div class="modal-box" style="width: 440px;">
       <h3 style="color: #e53935;">⚠️ 确认注销账号</h3>
       <p style="color: #666; font-size: 13px; line-height: 1.7; margin-bottom: 16px;">
-        此操作<b style="color: #e53935;">不可恢复</b>。你的账号、头像、点赞记录将被永久删除。<br />
-        请输入密码以确认注销：
+        此操作<b style="color: #e53935;">不可恢复</b>。请输入密码以确认注销：
       </p>
       <input type="password" id="delete-password" placeholder="请输入当前密码"
-             style="width: 100%; padding: 10px 14px; border: 1px solid #ebe5ef;
-                    border-radius: 8px; font-size: 14px; outline: none; font-family: inherit;" />
+             style="width: 100%; padding: 10px 14px; border: 1px solid #ebe5ef; border-radius: 8px; outline: none;" />
       <p id="delete-msg" class="form-msg" style="margin-top: 10px;"></p>
       <div class="modal-buttons">
         <button id="delete-cancel" class="btn btn-ghost">取消</button>
