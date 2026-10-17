@@ -55,9 +55,25 @@
         <span class="about-label">开发者：</span>
         <span id="about-devs-list"></span>
       </div>
-
       <div class="changelog">
         <div class="changelog-title">📝 更新日志</div>
+
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v3.6.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>存储优化</b>：图片上传全面支持前端自动压缩（头像 512p，图片 1024p），极大节省服务器空间</li>
+            <li><b>空间清理</b>：删帖/换头像时自动连带清理云端旧图片，杜绝“幽灵文件”白占空间</li>
+            <li><b>上传限制</b>：班级文件限制为 15MB 以内，并禁止上传视频和压缩包，保障网盘容量</li>
+            <li><b>懒加载</b>：全站图片加入懒加载机制，流量消耗大幅降低，网速更丝滑</li>
+            <li><b>个人名片</b>：在个人中心可设置微信号和手机号，点击班级成员头像即可查看名片</li>
+            <li><b>一键日程</b>：班级事务新增“📅”按钮，点击即可将活动一键存入个人日程</li>
+            <li><b>日历导出</b>：个人管理支持一键导出 ICS 日历文件，轻松同步至手机自带日历</li>
+            <li><b>体验修复</b>：彻底修复了首次进入某些页面会卡在“加载中”的时序 Bug</li>
+          </ul>
+        </div>
 
         <div class="changelog-entry">
           <div class="changelog-head">
@@ -65,8 +81,8 @@
             <span class="changelog-date">2026-10</span>
           </div>
           <ul class="changelog-list">
-            <li><b>论坛分页</b>：首屏只加载 20 条，底部"加载更多"翻页，突破 100 条上限</li>
-            <li><b>骨架屏</b>：论坛、文件、成员墙加载时显示灰色占位卡片，不再只有"加载中…"</li>
+            <li><b>论坛分页</b>：首屏只加载 20 条，底部“加载更多”翻页</li>
+            <li><b>骨架屏</b>：论坛、文件、成员墙加载时显示灰色占位卡片</li>
           </ul>
         </div>
 
@@ -76,9 +92,9 @@
             <span class="changelog-date">2026-10</span>
           </div>
           <ul class="changelog-list">
-            <li><b>帖子图片</b>：发帖可附带最多 9 张图片，点击可全屏预览</li>
+            <li><b>帖子图片</b>：发帖可附带最多 9 张图片，点击全屏预览</li>
             <li><b>@提及</b>：输入 @ 弹出成员列表，被提及者收到通知</li>
-            <li><b>数据统计</b>：班委/老师可查看班级活跃度、发帖排行、文件排行、活动参与率</li>
+            <li><b>数据统计</b>：班委/老师可查看班级活跃度、发帖排行、活动参与率</li>
           </ul>
         </div>
 
@@ -88,9 +104,9 @@
             <span class="changelog-date">2026-10</span>
           </div>
           <ul class="changelog-list">
-            <li><b>公告系统</b>：班委/老师可发布公告，支持置顶、编辑、删除</li>
-            <li><b>班级相册</b>：照片墙，支持批量上传、点击预览、管理员删除</li>
-            <li><b>顶栏重设计</b>：主链接保留 6 项，管理项收进下拉菜单，个人管理移回顶栏</li>
+            <li><b>公告系统</b>：发布公告，支持置顶、编辑、删除</li>
+            <li><b>班级相册</b>：照片墙，支持批量上传和预览</li>
+            <li><b>顶栏重设计</b>：主链接保留，管理项收进下拉菜单，支持移动端底部导航和侧边抽屉</li>
           </ul>
         </div>
 
@@ -101,24 +117,9 @@
           </div>
           <ul class="changelog-list">
             <li><b>通知中心</b>：申请 / 批准 / 拒绝通知，顶栏红点徽章</li>
-            <li><b>退出班级</b>：个人中心可退出当前班级</li>
+            <li><b>班级广场</b>：创建班级、申请加入、审批、退出、删除班级</li>
             <li><b>文件分类</b>：上传时填文件夹，顶部按文件夹筛选</li>
-            <li><b>帖子搜索</b>：论坛顶部搜索框，高亮匹配</li>
-            <li><b>头像墙</b>：班级事务页显示成员头像</li>
-            <li><b>删除班级</b>：创建者（老师）可删除班级</li>
-          </ul>
-        </div>
-
-        <div class="changelog-entry">
-          <div class="changelog-head">
-            <span class="changelog-version">v2.3.0</span>
-            <span class="changelog-date">2026-10</span>
-          </div>
-          <ul class="changelog-list">
-            <li><b>班级广场</b>：老师可创建班级；学生/班委可申请加入</li>
-            <li><b>申请审批</b>：班委审批学生申请，老师审批所有申请</li>
-            <li><b>三级论坛</b>：本班 / 年级 / 公共 论坛切换</li>
-            <li><b>嵌套回复</b>：支持楼中楼</li>
+            <li><b>帖子搜索 / 嵌套回复</b>：论坛支持关键词高亮和楼中楼</li>
           </ul>
         </div>
 
@@ -130,7 +131,6 @@
           <ul class="changelog-list">
             <li><b>活动统计</b>：时间投票（When2meet 风格网格）+ 接龙</li>
             <li><b>个人日程</b>：日程 + DDL，首页红点提醒</li>
-            <li><b>顶栏导航</b>：新增"活动统计"和"个人管理"入口</li>
           </ul>
         </div>
 
@@ -141,47 +141,13 @@
           </div>
           <ul class="changelog-list">
             <li><b>账号系统</b>：邮箱注册/登录，三类身份（学生 / 班委 / 老师）</li>
-            <li><b>班级事务</b>：三种视图（时间轴 / 时间表 / 列表），管理员可编辑</li>
+            <li><b>班级事务</b>：三种视图，管理员可编辑</li>
             <li><b>班级论坛</b>：发帖 / 回复 / 点赞 / 实时同步</li>
             <li><b>班级文件</b>：拖拽上传，全班可看</li>
             <li><b>个人中心</b>：头像 / 昵称 / 密码 / 注销</li>
-            <li><b>用户管理</b>：管理员可查看成员、重置密码、修改身份</li>
           </ul>
         </div>
       </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <p>THU-XY · 清华大学行健书院班级共建系统</p>
-    <p class="footer-note">非官方系统 · 仅供班级内部使用</p>
-  </footer>
-
-  <!-- 公告编辑弹窗 -->
-  <div id="ann-modal" class="modal" style="display:none;">
-    <div class="modal-box" style="width: 520px;">
-      <h3 id="ann-modal-title">发布公告</h3>
-      <div class="form-grid">
-        <label>标题</label>
-        <input type="text" id="ann-f-title" placeholder="如：本周班会通知" maxlength="50" />
-        <label>内容</label>
-        <textarea id="ann-f-content" placeholder="公告内容（支持换行）" maxlength="1000"
-                  style="padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;min-height:100px;outline:none;"></textarea>
-        <label>置顶</label>
-        <div>
-          <label class="checkbox-label">
-            <input type="checkbox" id="ann-f-pinned" />
-            <span>发布后置顶到首页最上方</span>
-          </label>
-        </div>
-      </div>
-      <p id="ann-msg" class="form-msg"></p>
-      <div class="modal-buttons">
-        <button id="ann-save" class="btn btn-primary">保存</button>
-        <button id="ann-cancel" class="btn btn-ghost">取消</button>
-      </div>
-    </div>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
