@@ -1,4 +1,4 @@
-/* 班级文件 v3.6.0（大文件拦截 + 图片压缩） */
+/* 班级文件 v3.6.1（修复中文文件名导致的上传失败） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -161,7 +161,10 @@
         try { finalFile = await U.resizeImage(file, 1024, 1024, 0.85); } catch (e) { console.warn('压缩失败', e); }
       }
 
-      const filePath = `${window.currentClassId}/${Date.now()}-${finalFile.name}`;
+      // ✅ 修复核心：生成安全的存储路径（不使用原文件名，避开中文）
+      const ext = (finalFile.name.split('.').pop() || 'file').toLowerCase();
+      const safeName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+      const filePath = `${window.currentClassId}/${safeName}`;
 
       btn.disabled = true; btn.textContent = '上传中…'; msgEl.textContent = '';
 
@@ -169,6 +172,7 @@
         const { error: upErr } = await db.storage.from('class-files').upload(filePath, finalFile, { upsert: false });
         if (upErr) throw upErr;
 
+        // 存入数据库时，保留原始中文名用于展示，存入安全路径用于实际访问
         const { error: dbErr } = await db.from('class_files').insert({
           class_id: window.currentClassId, name: finalFile.name, path: filePath,
           size: finalFile.size, mime_type: finalFile.type,
