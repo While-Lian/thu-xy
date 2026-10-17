@@ -1,4 +1,4 @@
-/* 申请审批 v2.3.0 */
+/* 申请审批 v3.9.0（容错增强） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -26,14 +26,24 @@
   }
 
   async function loadAll() {
-    const { data, error } = await db.rpc('list_class_join_requests');
-    if (error) {
+    const pendingEl = document.getElementById('pending-list');
+    const historyEl = document.getElementById('history-list');
+    
+    pendingEl.innerHTML = '<div class="request-empty">加载中…</div>';
+    historyEl.innerHTML = '<div class="request-empty">加载中…</div>';
+
+    try {
+      const { data, error } = await db.rpc('list_class_join_requests');
+      if (error) throw error;
+      
+      requests = data || [];
+      render();
+    } catch (error) {
       console.error(error);
-      document.getElementById('pending-list').innerHTML = '<div class="request-empty">加载失败</div>';
-      return;
+      const errHtml = '<div class="request-empty" style="color:var(--danger)">加载失败：' + U.escapeHtml(error.message) + '</div>';
+      pendingEl.innerHTML = errHtml;
+      historyEl.innerHTML = errHtml;
     }
-    requests = data || [];
-    render();
   }
 
   function render() {

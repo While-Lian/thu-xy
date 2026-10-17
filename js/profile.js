@@ -1,4 +1,4 @@
-/* 个人中心 v3.6.0（头像压缩 + 旧图清理） */
+/* 个人中心 v5.0 */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -31,6 +31,17 @@
     roleEl.className = 'profile-value role-' + currentUser.role;
     classEl.textContent = classInfo ? classInfo.name : (currentUser.class_id || '未加入班级');
 
+    // 👇 渲染成就进度条
+    const exp = currentUser.exp || 0;
+    const levelInfo = U.getLevelInfo(exp);
+    const prevExp = [0, 50, 200, 500].filter(x => x <= exp).pop(); // 计算当前等级的起始值
+    const nextExp = levelInfo.next;
+    const percent = nextExp === 9999 ? 100 : ((exp - prevExp) / (nextExp - prevExp) * 100).toFixed(1);
+    
+    document.getElementById('exp-level').innerHTML = `<span style="color:${levelInfo.color};">${levelInfo.icon} ${levelInfo.name}</span>`;
+    document.getElementById('exp-text').textContent = nextExp === 9999 ? `EXP ${exp}` : `EXP ${exp} / ${nextExp}`;
+    document.getElementById('exp-bar').style.width = `${percent}%`;
+
     if (wechatInput) wechatInput.value = currentUser.wechat || '';
     if (phoneInput) phoneInput.value = currentUser.phone || '';
 
@@ -56,35 +67,24 @@
     async function uploadAvatar(file) {
       if (!file.type.startsWith('image/')) return alert('请上传图片文件');
       if (file.size > 5 * 1024 * 1024) return alert('图片不能超过 5MB');
-
       avatarBtn.disabled = true; avatarBtn.textContent = '压缩中…';
-      try {
-        file = await U.resizeImage(file, 512, 512, 0.85);
-      } catch (e) { console.error('压缩失败', e); }
+      try { file = await U.resizeImage(file, 512, 512, 0.85); } catch (e) { console.error('压缩失败', e); }
 
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
       const path = `${currentUser.id}/avatar-${Date.now()}.${ext}`;
-
       avatarBtn.textContent = '上传中…';
+
       try {
-        // 1. 删除旧头像（节省空间）
         if (currentUser.avatar_url) {
           const oldPathMatch = currentUser.avatar_url.split('/avatars/');
-          if (oldPathMatch.length > 1) {
-            await db.storage.from('avatars').remove([oldPathMatch[1]]);
-          }
+          if (oldPathMatch.length > 1) await db.storage.from('avatars').remove([oldPathMatch[1]]);
         }
-
-        // 2. 上传新头像
         const { error: upErr } = await db.storage.from('avatars').upload(path, file, { upsert: true });
         if (upErr) throw upErr;
-        
         const { data: urlData } = db.storage.from('avatars').getPublicUrl(path);
         const url = urlData.publicUrl;
-        
         const { error: dbErr } = await db.from('profiles').update({ avatar_url: url }).eq('id', currentUser.id);
         if (dbErr) throw dbErr;
-        
         currentUser.avatar_url = url; window.currentUser.avatar_url = url;
         renderAvatar(); if (window.Topbar) window.Topbar.render();
       } catch (err) {

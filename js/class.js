@@ -363,6 +363,7 @@
         wall.innerHTML = `<div class="member-wall-empty" style="color:#e53935;">加载失败: ${U.escapeHtml(err.message || '网络异常')}</div>`; 
       }
     }
+    
     function showMemberCard(m) {
       const cardModal = document.getElementById('card-modal');
       const avEl = document.getElementById('card-avatar');

@@ -1,4 +1,4 @@
-/* 通用工具 & 顶栏 v3.9.1 */
+/* 通用工具 & 顶栏 v5.2（收纳低频功能，解决顶栏重叠） */
 (function() {
   const originalAddEventListener = window.addEventListener;
   window.addEventListener = function(type, listener, options) {
@@ -7,11 +7,10 @@
     }
     return originalAddEventListener.call(window, type, listener, options);
   };
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  const savedTheme = localStorage.getItem('thu-xy-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
 })();
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
 
 window.Utils = {
   escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); },
@@ -21,6 +20,12 @@ window.Utils = {
   formatDeadline(iso) { if (!iso) return ''; const d = new Date(iso), now = new Date(), diff = d - now; if (diff < 0) return '已截止'; const mins = Math.floor(diff / 60000); if (mins < 60) return `还有 ${mins} 分钟`; const hours = Math.floor(mins / 60); if (hours < 24) return `还有 ${hours} 小时`; return `还有 ${Math.floor(hours / 24)} 天`; },
   roleName(role) { return { student: '学生', committee: '班委', teacher: '老师' }[role] || role; },
   isAdminRole(role) { return role === 'committee' || role === 'teacher'; },
+  getLevelInfo(exp) {
+    if (exp >= 500) return { name: '镇班之宝', icon: '👑', color: '#f57f17', next: 9999 };
+    if (exp >= 200) return { name: '核心骨干', icon: '💎', color: '#6a1b9a', next: 500 };
+    if (exp >= 50)  return { name: '活跃分子', icon: '🔥', color: '#e65100', next: 200 };
+    return { name: '初入行健', icon: '🌱', color: '#2e7d32', next: 50 };
+  },
   resizeImage(file, maxWidth = 512, maxHeight = 512, quality = 0.8) {
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) return resolve(file);
@@ -64,9 +69,24 @@ window.Topbar = {
     const u = window.currentUser; if (!u) return;
     const bar = document.getElementById('topbar'); if (!bar) return;
     const U = window.Utils, currentPage = location.pathname.split('/').pop() || 'index.html';
-    
-    // 👇 核心修复：获取当前活跃班级
     const myActiveId = u.active_class_id || u.class_id;
+
+    if (!document.getElementById('global-search-modal')) {
+      const searchHtml = `
+        <div id="global-search-modal" class="modal" style="display:none; z-index: 9999; padding-top: 10vh; align-items: flex-start;">
+          <div class="modal-box" style="width: 600px; max-width: 90vw; padding: 0; overflow: hidden;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center;">
+              <span style="font-size: 20px; margin-right: 12px;">🔍</span>
+              <input type="text" id="gs-input" placeholder="搜索公告、帖子、评论、文件..." style="flex: 1; border: none; outline: none; font-size: 16px; background: transparent; color: var(--text);" autocomplete="off" />
+              <span style="font-size: 12px; color: #999; border: 1px solid #ccc; padding: 2px 6px; border-radius: 4px;">ESC</span>
+            </div>
+            <div id="gs-results" style="max-height: 60vh; overflow-y: auto; padding: 10px;"><div class="gs-empty">输入关键词开始搜索</div></div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', searchHtml);
+      this.bindGlobalSearch();
+    }
 
     if (!myActiveId) {
       bar.innerHTML = `
@@ -74,6 +94,7 @@ window.Topbar = {
           <a href="classes.html" class="topbar-brand"><span class="topbar-brand-icon">清</span><span class="topbar-brand-text">清华大学 · 行健书院</span></a>
           <nav class="topbar-nav"><a href="classes.html" class="topbar-link active">班级广场</a></nav>
           <div class="topbar-right">
+            ${this.themeBtnHtml()}
             <div class="topbar-user" id="topbar-user">
               ${this.avatarHtml(u)}<span class="topbar-username">${U.escapeHtml(u.nickname)}</span><span class="topbar-caret">▾</span>
               <div class="topbar-dropdown" id="topbar-dropdown"><a href="profile.html">个人中心</a><a href="#" id="topbar-logout">退出登录</a></div>
@@ -82,17 +103,20 @@ window.Topbar = {
           </div>
         </div>
       `;
-      this.bindUserEvents(); this.renderBottomNav(); this.renderMobileDrawer(); return;
+      this.bindUserEvents(); this.bindThemeEvent(); this.renderBottomNav(); this.renderMobileDrawer(); return;
     }
 
+    // 👇 核心修改：精简主链接，把低频功能放进“班级工具”
     const mainLinks = [
       { href: 'class.html',      label: '班级事务', page: 'class.html' },
       { href: 'forum.html',      label: '班级论坛', page: 'forum.html' },
       { href: 'activities.html', label: '活动统计', page: 'activities.html' },
       { href: 'files.html',      label: '班级文件', page: 'files.html' },
-      { href: 'photos.html',     label: '班级相册', page: 'photos.html' },
       { href: 'personal.html',   label: '个人管理', page: 'personal.html' }
     ];
+
+    const toolPages = ['photos.html', 'homework.html', 'finances.html', 'feedback.html'];
+    const isToolPage = toolPages.includes(currentPage);
 
     let pendingCount = 0, managedClasses = [];
     if (U.isAdminRole(u.role)) {
@@ -109,21 +133,21 @@ window.Topbar = {
 
     const isAdminPage = ['admin.html', 'requests.html', 'stats.html'].includes(currentPage);
     const roleTagHtml = u.role !== 'student' ? `<span class="topbar-role topbar-role-${u.role}">${U.roleName(u.role)}</span>` : '';
+    const levelInfo = U.getLevelInfo(u.exp || 0);
     
-    // 👇 顶栏切换按钮（高亮和事件用 myActiveId）
     let switchClassHtml = '';
     if (u.role === 'teacher' && managedClasses.length > 1) {
       const classInfo = SITE_CONFIG.classes.find(c => c.id === myActiveId);
       const curName = classInfo ? classInfo.name : myActiveId;
       switchClassHtml = `
-        <div class="topbar-manage" id="topbar-switch" style="margin-right: 8px;">
+        <div class="topbar-manage" id="topbar-switch" style="margin-right: 4px;">
           <button class="topbar-link topbar-switch-btn" type="button" style="background:var(--primary-light); color:var(--primary);">
             🏫 ${U.escapeHtml(curName)} <span class="topbar-caret">▾</span>
           </button>
           <div class="topbar-dropdown topbar-manage-dropdown" id="topbar-switch-dropdown" style="min-width: 160px;">
             <div style="padding: 6px 12px; font-size: 11px; color: #999;">切换管理班级</div>
             ${managedClasses.map(c => `
-              <a href="#" class="switch-class-item${c.id === myActiveId ? ' active' : ''}" data-id="${c.id}" style="${c.id === myActiveId ? 'background:var(--primary-lighter); color:var(--primary); font-weight:600;' : ''}">
+              <a href="javascript:void(0)" class="switch-class-item${c.id === myActiveId ? ' active' : ''}" data-id="${c.id}" style="${c.id === myActiveId ? 'background:var(--primary-lighter); color:var(--primary); font-weight:600;' : ''}">
                 ${U.escapeHtml(c.name)} ${c.id === myActiveId ? ' ✓' : ''}
               </a>
             `).join('')}
@@ -132,8 +156,24 @@ window.Topbar = {
       `;
     }
 
+    // 新增：班级工具菜单
+    const toolsMenuHtml = `
+      <div class="topbar-manage" id="topbar-tools" style="margin-right: 4px;">
+        <button class="topbar-link topbar-tools-btn${isToolPage ? ' active' : ''}" type="button">
+          🎒 班级工具 <span class="topbar-caret">▾</span>
+        </button>
+        <div class="topbar-dropdown topbar-manage-dropdown" id="topbar-tools-dropdown">
+          <a href="lottery.html">🎲 随机抽签</a>
+          <a href="homework.html">📦 作业收集</a>
+          <a href="finances.html">💰 班费账本</a>
+          <a href="feedback.html">📫 意见箱</a>
+          <a href="photos.html">📸 班级相册</a>
+        </div>
+      </div>
+    `;
+
     const adminMenuHtml = U.isAdminRole(u.role) ? `
-      <div class="topbar-manage" id="topbar-manage">
+      <div class="topbar-manage" id="topbar-manage" style="margin-right: 4px;">
         <button class="topbar-link topbar-manage-btn${isAdminPage ? ' active' : ''}" type="button">
           管理 ${pendingCount > 0 ? `<span class="topbar-badge">${pendingCount}</span>` : ''} <span class="topbar-caret">▾</span>
         </button>
@@ -149,12 +189,18 @@ window.Topbar = {
       <div class="topbar-inner">
         <a href="index.html" class="topbar-brand">
           <span class="topbar-brand-icon">清</span>
-          <span class="topbar-brand-text">清华大学 · 行健书院</span>
+          <span class="topbar-brand-text">行健书院</span>
         </a>
         <nav class="topbar-nav">
-          ${mainLinks.map(l => `<a href="${l.href}" class="topbar-link${currentPage === l.page ? ' active' : ''}">${U.escapeHtml(l.label)}</a>`).join('')}
+          ${mainLinks.slice(0, 4).map(l => `<a href="${l.href}" class="topbar-link${currentPage === l.page ? ' active' : ''}">${U.escapeHtml(l.label)}</a>`).join('')}
+          ${toolsMenuHtml}
+          ${mainLinks.slice(4).map(l => `<a href="${l.href}" class="topbar-link${currentPage === l.page ? ' active' : ''}">${U.escapeHtml(l.label)}</a>`).join('')}
         </nav>
         <div class="topbar-right">
+          ${this.themeBtnHtml()}
+          <button class="topbar-search-btn" id="topbar-search-btn" title="全局搜索 (Ctrl+K)">
+            <span style="font-size:16px;">🔍</span>
+          </button>
           ${switchClassHtml}
           ${adminMenuHtml}
           <div class="topbar-user" id="topbar-user">
@@ -162,6 +208,10 @@ window.Topbar = {
             <span class="topbar-username">${U.escapeHtml(u.nickname)}${roleTagHtml}</span>
             <span class="topbar-caret">▾</span>
             <div class="topbar-dropdown" id="topbar-dropdown">
+              <div style="padding: 8px 12px; border-bottom: 1px solid var(--border); margin-bottom: 4px;">
+                <div style="font-size:12px; color:${levelInfo.color}; font-weight:600;">${levelInfo.icon} ${levelInfo.name}</div>
+                <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">EXP ${u.exp || 0} / ${levelInfo.next}</div>
+              </div>
               <a href="profile.html">👤 个人中心</a>
               <a href="classes.html">🏫 班级广场</a>
               <a href="#" id="topbar-logout">🚪 退出登录</a>
@@ -172,52 +222,84 @@ window.Topbar = {
       </div>
     `;
 
-    this.bindUserEvents(); this.bindManageEvents(); this.bindSwitchEvents();
+    this.bindUserEvents(); this.bindManageEvents(); this.bindSwitchEvents(); 
+    this.bindToolsEvents();
+    this.bindThemeEvent(); this.bindSearchBtnEvent();
     this.renderBottomNav(); this.renderMobileDrawer(managedClasses); this.bindMobileMenu();
   },
 
-  avatarHtml(u) { const i = (u.nickname || '?').charAt(0).toUpperCase(); return u.avatar_url ? `<img src="${u.avatar_url}" class="topbar-avatar" alt="" />` : `<span class="topbar-avatar topbar-avatar-default">${window.Utils.escapeHtml(i)}</span>`; },
+  themeBtnHtml() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; return `<button class="topbar-theme-btn" id="topbar-theme-btn" title="暗黑模式"><span style="font-size:16px;">${isDark ? '🌙' : '☀️'}</span></button>`; },
+  bindThemeEvent() { const btn = document.getElementById('topbar-theme-btn'); if (!btn) return; btn.addEventListener('click', () => { const cur = document.documentElement.getAttribute('data-theme') || 'light'; const next = cur === 'light' ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', next); localStorage.setItem('thu-xy-theme', next); btn.innerHTML = `<span style="font-size:16px;">${next === 'dark' ? '🌙' : '☀️'}</span>`; }); },
+  bindSearchBtnEvent() { const btn = document.getElementById('topbar-search-btn'); if (btn) btn.addEventListener('click', () => document.getElementById('global-search-modal').style.display = 'flex'); },
 
+  bindGlobalSearch() {
+    const modal = document.getElementById('global-search-modal'), input = document.getElementById('gs-input'), results = document.getElementById('gs-results'), db = window.supabaseClient;
+    let searchTimer;
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); if (modal.style.display !== 'flex') { modal.style.display = 'flex'; input.focus(); } else modal.style.display = 'none'; }
+      if (e.key === 'Escape' && modal.style.display === 'flex') modal.style.display = 'none';
+    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    input.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const val = input.value.trim();
+      if (!val) { results.innerHTML = '<div class="gs-empty">输入关键词开始搜索</div>'; return; }
+      results.innerHTML = '<div class="gs-empty">搜索中…</div>';
+      searchTimer = setTimeout(async () => {
+        const cid = window.currentClassId;
+        try {
+          const [anns, posts, replies, files] = await Promise.all([
+            db.from('announcements').select('id, title, content').eq('class_id', cid).ilike('title', `%${val}%`).limit(5),
+            db.from('class_posts').select('id, content, author').eq('class_id', cid).ilike('content', `%${val}%`).limit(5),
+            db.from('class_replies').select('id, content, author, post_id').eq('class_id', cid).ilike('content', `%${val}%`).limit(5),
+            db.from('class_files').select('id, name').eq('class_id', cid).ilike('name', `%${val}%`).limit(5)
+          ]);
+          let html = '';
+          const highlight = (text) => { const regex = new RegExp(`(${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'); return window.Utils.escapeHtml(text).replace(regex, '<mark>$1</mark>'); };
+          if (anns.data && anns.data.length) { html += '<div class="gs-group-title">📣 公告</div>'; html += anns.data.map(a => `<a href="index.html" class="gs-item"><div class="gs-item-title">${highlight(a.title)}</div><div class="gs-item-desc">${highlight(a.content.slice(0, 50))}...</div></a>`).join(''); }
+          if (posts.data && posts.data.length) { html += '<div class="gs-group-title">💬 论坛帖子</div>'; html += posts.data.map(p => `<a href="forum.html" class="gs-item"><div class="gs-item-title">由 ${highlight(p.author)} 发布</div><div class="gs-item-desc">${highlight(p.content.slice(0, 50))}...</div></a>`).join(''); }
+          if (replies.data && replies.data.length) { html += '<div class="gs-group-title">💭 论坛评论</div>'; html += replies.data.map(r => `<a href="forum.html#post-${r.post_id}" class="gs-item"><div class="gs-item-title">${highlight(r.author)} 的评论</div><div class="gs-item-desc">${highlight(r.content.slice(0, 50))}...</div></a>`).join(''); }
+          if (files.data && files.data.length) { html += '<div class="gs-group-title">📁 文件</div>'; html += files.data.map(f => `<a href="files.html" class="gs-item"><div class="gs-item-title">${highlight(f.name)}</div></a>`).join(''); }
+          results.innerHTML = html || '<div class="gs-empty">没有找到相关内容</div>';
+        } catch (e) { results.innerHTML = '<div class="gs-empty" style="color:red">搜索出错</div>'; }
+      }, 300);
+    });
+  },
+
+  avatarHtml(u) { const i = (u.nickname || '?').charAt(0).toUpperCase(); return u.avatar_url ? `<img src="${u.avatar_url}" class="topbar-avatar" alt="" />` : `<span class="topbar-avatar topbar-avatar-default">${window.Utils.escapeHtml(i)}</span>`; },
   bindUserEvents() {
     const userEl = document.getElementById('topbar-user'), dropdown = document.getElementById('topbar-dropdown');
     if (!userEl || !dropdown) return;
-    userEl.addEventListener('click', (e) => {
-      e.stopPropagation(); document.querySelectorAll('.topbar-dropdown').forEach(d => { if (d !== dropdown) d.classList.remove('show'); }); dropdown.classList.toggle('show');
-    });
+    userEl.addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.topbar-dropdown').forEach(d => { if (d !== dropdown) d.classList.remove('show'); }); dropdown.classList.toggle('show'); });
     document.addEventListener('click', () => dropdown.classList.remove('show'));
     document.getElementById('topbar-logout').addEventListener('click', async (e) => { e.preventDefault(); await window.supabaseClient.auth.signOut(); location.href = 'login.html'; });
   },
-
   bindManageEvents() {
     const manageEl = document.getElementById('topbar-manage'), dropdown = document.getElementById('topbar-manage-dropdown');
     if (!manageEl || !dropdown) return;
-    manageEl.querySelector('.topbar-manage-btn').addEventListener('click', (e) => {
-      e.stopPropagation(); document.querySelectorAll('.topbar-dropdown').forEach(d => { if (d !== dropdown) d.classList.remove('show'); }); dropdown.classList.toggle('show');
-    });
+    manageEl.querySelector('.topbar-manage-btn').addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.topbar-dropdown').forEach(d => { if (d !== dropdown) d.classList.remove('show'); }); dropdown.classList.toggle('show'); });
     document.addEventListener('click', () => dropdown.classList.remove('show'));
   },
-
+  bindToolsEvents() {
+    const toolsEl = document.getElementById('topbar-tools'), dropdown = document.getElementById('topbar-tools-dropdown');
+    if (!toolsEl || !dropdown) return;
+    toolsEl.querySelector('.topbar-tools-btn').addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.topbar-dropdown').forEach(d => { if (d !== dropdown) d.classList.remove('show'); }); dropdown.classList.toggle('show'); });
+    document.addEventListener('click', () => dropdown.classList.remove('show'));
+  },
   bindSwitchEvents() {
     const switchEl = document.getElementById('topbar-switch'), dropdown = document.getElementById('topbar-switch-dropdown');
     if (!switchEl || !dropdown) return;
-    switchEl.querySelector('.topbar-switch-btn').addEventListener('click', (e) => {
-      e.stopPropagation(); document.querySelectorAll('.topbar-dropdown').forEach(d => { if (d !== dropdown) d.classList.remove('show'); }); dropdown.classList.toggle('show');
-    });
+    switchEl.querySelector('.topbar-switch-btn').addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.topbar-dropdown').forEach(d => { if (d !== dropdown) d.classList.remove('show'); }); dropdown.classList.toggle('show'); });
     document.addEventListener('click', () => dropdown.classList.remove('show'));
-
     document.querySelectorAll('.switch-class-item').forEach(item => {
       item.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const targetId = item.dataset.id;
-        const myActiveId = window.currentUser.active_class_id || window.currentUser.class_id;
-        
-        if (targetId === myActiveId) return;
-        if (!confirm('确定切换到该班级吗？页面将自动刷新。')) return;
-        
-        item.textContent = '切换中...';
+        e.preventDefault(); const targetId = item.dataset.id; const myActiveId = window.currentUser.active_class_id || window.currentUser.class_id;
+        if (targetId === myActiveId) { dropdown.classList.remove('show'); return; }
+        const allItems = dropdown.querySelectorAll('.switch-class-item'); allItems.forEach(a => a.style.pointerEvents = 'none');
+        item.textContent = '切换中…'; item.style.background = 'var(--primary-lighter)'; item.style.color = 'var(--primary)';
         const { error } = await window.supabaseClient.rpc('switch_teacher_class', { p_class_id: targetId });
-        if (error) { alert('切换失败：' + error.message); }
-        else { location.reload(); }
+        if (error) { alert('切换失败：' + error.message); item.textContent = '切换失败，点击重试'; allItems.forEach(a => a.style.pointerEvents = 'auto'); }
+        else { window.location.replace('index.html?t=' + Date.now()); }
       });
     });
   },
@@ -228,11 +310,10 @@ window.Topbar = {
     const nav = document.createElement('nav'); nav.id = 'mobile-bottom-nav'; nav.className = 'mobile-bottom-nav';
     const p = location.pathname.split('/').pop() || 'index.html';
     const myActiveId = u.active_class_id || u.class_id;
-
     if (!myActiveId) {
       nav.innerHTML = `<a href="classes.html" class="mbn-item${p === 'classes.html' ? ' active' : ''}"><span class="mbn-icon">🏫</span><span class="mbn-label">广场</span></a><a href="profile.html" class="mbn-item${p === 'profile.html' ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
     } else {
-      nav.innerHTML = `<a href="class.html" class="mbn-item${p === 'class.html' ? ' active' : ''}"><span class="mbn-icon">📅</span><span class="mbn-label">事务</span></a><a href="forum.html" class="mbn-item${p === 'forum.html' ? ' active' : ''}"><span class="mbn-icon">💬</span><span class="mbn-label">论坛</span></a><a href="activities.html" class="mbn-item${p === 'activities.html' ? ' active' : ''}"><span class="mbn-icon">📊</span><span class="mbn-label">活动</span></a><a href="profile.html" class="mbn-item${['profile.html', 'personal.html', 'files.html', 'photos.html', 'admin.html', 'requests.html', 'stats.html'].includes(p) ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
+      nav.innerHTML = `<a href="class.html" class="mbn-item${p === 'class.html' ? ' active' : ''}"><span class="mbn-icon">📅</span><span class="mbn-label">事务</span></a><a href="forum.html" class="mbn-item${p === 'forum.html' ? ' active' : ''}"><span class="mbn-icon">💬</span><span class="mbn-label">论坛</span></a><a href="activities.html" class="mbn-item${p === 'activities.html' ? ' active' : ''}"><span class="mbn-icon">📊</span><span class="mbn-label">活动</span></a><a href="profile.html" class="mbn-item${['profile.html', 'personal.html', 'files.html', 'photos.html', 'admin.html', 'requests.html', 'stats.html', 'finances.html', 'feedback.html', 'homework.html'].includes(p) ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
     }
     document.body.appendChild(nav);
   },
@@ -243,32 +324,32 @@ window.Topbar = {
     const U = window.Utils, p = location.pathname.split('/').pop() || 'index.html';
     const myActiveId = u.active_class_id || u.class_id;
     const isAdmin = U.isAdminRole(u.role), links = [];
-    
     if (myActiveId) {
       links.push(
         { href: 'class.html', label: '📅 班级事务', page: 'class.html' }, { href: 'forum.html', label: '💬 班级论坛', page: 'forum.html' },
         { href: 'activities.html', label: '📊 活动统计', page: 'activities.html' }, { href: 'files.html', label: '📁 班级文件', page: 'files.html' },
-        { href: 'photos.html', label: '📸 班级相册', page: 'photos.html' }, { href: 'personal.html', label: '📝 个人管理', page: 'personal.html' },
-        { href: 'profile.html', label: '👤 个人中心', page: 'profile.html' }, { href: 'classes.html', label: '🏫 班级广场', page: 'classes.html' }
+        { href: 'homework.html', label: '📦 作业收集', page: 'homework.html' }, { href: 'photos.html', label: '📸 班级相册', page: 'photos.html' },
+        { href: 'personal.html', label: '📝 个人管理', page: 'personal.html' }, { href: 'finances.html', label: '💰 班费账本', page: 'finances.html' },
+        { href: 'feedback.html', label: '📫 匿名意见箱', page: 'feedback.html' }, { href: 'profile.html', label: '👤 个人中心', page: 'profile.html' },
+        { href: 'classes.html', label: '🏫 班级广场', page: 'classes.html' }
       );
       if (isAdmin) links.push({ href: 'admin.html', label: '👥 用户管理', page: 'admin.html' }, { href: 'requests.html', label: '📨 申请审批', page: 'requests.html' }, { href: 'stats.html', label: '📊 数据统计', page: 'stats.html' });
     } else {
       links.push({ href: 'classes.html', label: '🏫 班级广场', page: 'classes.html' }, { href: 'profile.html', label: '👤 个人中心', page: 'profile.html' });
     }
-
     const drawer = document.createElement('div'); drawer.id = 'mobile-drawer'; drawer.className = 'mobile-drawer';
     const overlay = document.createElement('div'); overlay.className = 'mobile-drawer-overlay'; overlay.id = 'mobile-drawer-overlay'; drawer.appendChild(overlay);
     const panel = document.createElement('div'); panel.className = 'mobile-drawer-panel';
-    
     const initial = (u.nickname || '?').charAt(0).toUpperCase();
     const avatarHtml = u.avatar_url ? `<img src="${u.avatar_url}" alt="" />` : `<span class="mdb-avatar-default">${U.escapeHtml(initial)}</span>`;
+    const levelInfo = U.getLevelInfo(u.exp || 0);
 
     let switchClassMobile = '';
     if (u.role === 'teacher' && managedClasses.length > 1) {
       switchClassMobile = `
         <div style="padding: 12px 24px; border-bottom: 1px solid var(--border-light);">
           <div style="font-size: 12px; color: #999; margin-bottom: 8px;">切换管理班级</div>
-          <select id="mobile-switch-select" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-family:inherit; outline:none;">
+          <select id="mobile-switch-select" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-family:inherit; outline:none; background:var(--white); color:var(--text);">
             ${managedClasses.map(c => `<option value="${c.id}" ${c.id === myActiveId ? 'selected' : ''}>${U.escapeHtml(c.name)}</option>`).join('')}
           </select>
         </div>
@@ -278,26 +359,25 @@ window.Topbar = {
     panel.innerHTML = `
       <div class="mobile-drawer-header">
         <div class="mdb-avatar">${avatarHtml}</div>
-        <div class="mdb-info"><div class="mdb-name">${U.escapeHtml(u.nickname)}</div><div class="mdb-role">${U.roleName(u.role)}</div></div>
+        <div class="mdb-info">
+          <div class="mdb-name">${U.escapeHtml(u.nickname)}</div>
+          <div class="mdb-role" style="color:${levelInfo.color}; font-weight:600;">${levelInfo.icon} ${levelInfo.name} (EXP: ${u.exp || 0})</div>
+        </div>
       </div>
       ${switchClassMobile}
       <div class="mobile-drawer-links">${links.map(l => `<a href="${l.href}" class="mdb-link${p === l.page ? ' active' : ''}">${l.label}</a>`).join('')}</div>
       <div class="mobile-drawer-footer"><button id="mobile-drawer-logout" class="mdb-logout-btn">退出登录</button></div>`;
     drawer.appendChild(panel); document.body.appendChild(drawer);
-
     document.getElementById('mobile-drawer-logout').addEventListener('click', async () => { await window.supabaseClient.auth.signOut(); location.href = 'login.html'; });
-    
     const sel = document.getElementById('mobile-switch-select');
     if (sel) {
       sel.addEventListener('change', async (e) => {
-        const targetId = e.target.value;
-        const myActiveId = window.currentUser.active_class_id || window.currentUser.class_id;
+        const targetId = e.target.value; const myActiveId = window.currentUser.active_class_id || window.currentUser.class_id;
         if (targetId === myActiveId) return;
-        if (!confirm('确定切换到该班级吗？')) { e.target.value = myActiveId; return; }
         sel.disabled = true;
         const { error } = await window.supabaseClient.rpc('switch_teacher_class', { p_class_id: targetId });
         if (error) { alert('切换失败：' + error.message); sel.disabled = false; }
-        else { location.reload(); }
+        else { window.location.replace('index.html?t=' + Date.now()); }
       });
     }
   },

@@ -139,16 +139,15 @@
       const effectiveClassId = data.active_class_id || data.class_id;
 
       window.currentUser = {
-        id: user.id, 
-        email: user.email,
+        id: user.id, email: user.email,
         nickname: data.nickname,
-        class_id: effectiveClassId,         // 覆盖为活跃班级
-        active_class_id: data.active_class_id || null, 
+        class_id: data.class_id || null,
+        active_class_id: data.active_class_id || null,
         grade: data.grade || null,
         role: data.role,
         avatar_url: data.avatar_url || null,
-        wechat: data.wechat || null, 
-        phone: data.phone || null
+        wechat: data.wechat || null, phone: data.phone || null,
+        exp: data.exp || 0  // 👈 加上这行
       };
     }
   }

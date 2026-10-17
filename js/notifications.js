@@ -1,11 +1,10 @@
-/* 通知中心 v2.4.0 */
+/* 通知中心 v4.0.0（带桌面系统通知） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
   if (!db) return;
   const U = window.Utils;
 
-  // 顶栏铃铛：定时轮询 + 实时订阅
   let pollTimer = null;
   let notifChannel = null;
   let currentUser = null;
@@ -13,6 +12,12 @@
   window.addEventListener('user-ready', (e) => {
     currentUser = e.detail;
     if (!currentUser.class_id) return;
+    
+    // 首次进入时，尝试请求桌面通知权限
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     initBell();
   });
 
@@ -20,8 +25,6 @@
     injectBellButton();
     updateBadge();
     subscribeRealtime();
-
-    // 兜底：每 60 秒轮询一次
     pollTimer = setInterval(updateBadge, 60000);
   }
 
@@ -36,15 +39,14 @@
     bell.title = '通知';
     bell.innerHTML = '🔔<span class="notif-badge" id="notif-badge" style="display:none;">0</span>';
     bell.addEventListener('click', (e) => {
-      e.stopPropagation(); // 防止展开 dropdown
+      e.stopPropagation();
       location.href = 'notifications.html';
     });
 
-    // 关键：插入到 topbar-user 内部最前面
     userEl.insertBefore(bell, userEl.firstChild);
   }
 
-  async function updateBadge() {
+  async function updateBadge(showDesktopNotif = false) {
     if (!currentUser || !currentUser.class_id) return;
     const { count } = await db
       .from('notifications')
@@ -53,12 +55,32 @@
       .eq('is_read', false);
 
     const badge = document.getElementById('notif-badge');
-    if (!badge) return;
-    if (count && count > 0) {
-      badge.textContent = count > 99 ? '99+' : count;
-      badge.style.display = 'inline-block';
-    } else {
-      badge.style.display = 'none';
+    if (badge) {
+      if (count && count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // 👇 如果收到了实时新消息，且页面被切到后台了，弹出系统通知
+    if (showDesktopNotif && 'Notification' in window && Notification.permission === 'granted') {
+      if (document.hidden) {
+        try {
+          // 优先通过 Service Worker 发送（兼容手机端）
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification('THU-XY 班级共建', {
+            body: '你收到了一条新的班级消息，点击查看！',
+            icon: '/thu-xy/icon-192.png',
+            badge: '/thu-xy/icon-192.png',
+            vibrate: [200, 100, 200]
+          });
+        } catch (e) {
+          // 降级到普通浏览器通知
+          new Notification('THU-XY 班级共建', { body: '你收到了一条新的班级消息，点击查看！' });
+        }
+      }
     }
   }
 
@@ -69,24 +91,15 @@
     notifChannel = db
       .channel('notifications-' + currentUser.id)
       .on('postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${currentUser.id}`
-        },
-        () => { updateBadge(); })
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` },
+        () => { updateBadge(true); }) // 收到新通知，传 true
       .subscribe();
   }
 
-  // 对外暴露，供 notifications.html 使用
   window.NotificationsAPI = {
     markAllRead: async () => {
       if (!currentUser) return;
-      await db.from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', currentUser.id)
-        .eq('is_read', false);
+      await db.from('notifications').update({ is_read: true }).eq('user_id', currentUser.id).eq('is_read', false);
       updateBadge();
     },
     markRead: async (id) => {

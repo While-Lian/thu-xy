@@ -1,4 +1,4 @@
-/* 论坛 v3.6.0（图片存储优化 + 懒加载） */
+/* 论坛 v4.0.1（展示等级标签 + 匿名 + Markdown） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -11,6 +11,12 @@
   let currentUser = null, activeScope = 'class', searchKeyword = '';
   let currentPosts = [], currentReplies = [], myLikes = new Set(), pendingImages = [], mentionPool = [];
   let currentPage = 0, hasMore = true, isLoading = false;
+
+  function renderMarkdown(text) {
+    if (!text) return '';
+    const rawHtml = marked.parse(text.replace(/\n/g, '<br>'));
+    return DOMPurify.sanitize(rawHtml);
+  }
 
   window.addEventListener('user-ready', (e) => {
     currentUser = e.detail;
@@ -32,6 +38,7 @@
     const loadMoreWrap = document.getElementById('load-more-wrap');
     const loadMoreBtn = document.getElementById('load-more-btn');
     const noMoreHint = document.getElementById('no-more-hint');
+    const anonymousCheck = document.getElementById('post-anonymous');
 
     if (!contentInput || !postList) return;
 
@@ -54,7 +61,6 @@
     updateScopeHint();
 
     if (searchInput) searchInput.addEventListener('input', () => { searchKeyword = searchInput.value.trim().toLowerCase(); renderAll(); });
-
     contentInput.addEventListener('input', () => { charCount.textContent = `${contentInput.value.length} / 500`; });
 
     /* ============ 图片处理 ============ */
@@ -93,10 +99,7 @@
       const urls = [];
       for (const p of pendingImages) {
         let finalFile = p.file;
-        try {
-          finalFile = await U.resizeImage(p.file, 1024, 1024, 0.85);
-        } catch (e) { console.warn('压缩失败', e); }
-
+        try { finalFile = await U.resizeImage(p.file, 1024, 1024, 0.85); } catch (e) { console.warn('压缩失败', e); }
         const ext = (finalFile.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${window.currentClassId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const { error } = await db.storage.from('forum-images').upload(path, finalFile);
@@ -122,15 +125,24 @@
         let imageUrls = [];
         if (pendingImages.length) { submitBtn.textContent = '压缩上传中…'; imageUrls = await uploadPendingImages(); }
 
-        const payload = { class_id: currentUser.class_id, user_id: currentUser.id, author: currentUser.nickname, content: content || '（图片）', scope, image_urls: imageUrls };
+        const payload = { 
+          class_id: currentUser.class_id, 
+          user_id: currentUser.id, 
+          author: currentUser.nickname, 
+          content: content || '（图片）', 
+          scope, 
+          image_urls: imageUrls,
+          is_anonymous: anonymousCheck ? anonymousCheck.checked : false
+        };
         if (scope === 'grade') payload.grade = currentUser.grade;
 
         const { data: inserted, error } = await db.from(TABLE).insert(payload).select().single();
         if (error) throw error;
 
-        if (content) notifyMentions(content, inserted.id);
+        if (content && !payload.is_anonymous) notifyMentions(content, inserted.id);
 
         contentInput.value = ''; charCount.textContent = '0 / 500'; pendingImages = []; renderImagePreview();
+        if (anonymousCheck) anonymousCheck.checked = false;
 
         if (scope !== activeScope) { scopeTabs.forEach(b => b.classList.toggle('active', b.dataset.scope === scope)); activeScope = scope; }
         await loadAll(true);
@@ -220,11 +232,16 @@
 
       const authorIds = [...new Set(currentPosts.map(p => p.user_id).filter(Boolean))];
       let profileMap = {};
+      
+      // 👇 核心修改：顺带查 exp
       if (authorIds.length) {
-        const { data: profiles } = await db.from('profiles').select('id, avatar_url').in('id', authorIds);
+        const { data: profiles } = await db.from('profiles').select('id, avatar_url, exp').in('id', authorIds);
         (profiles || []).forEach(p => { profileMap[p.id] = p; });
       }
-      currentPosts.forEach(p => { p._avatar = profileMap[p.user_id]?.avatar_url || null; });
+      currentPosts.forEach(p => { 
+        p._avatar = profileMap[p.user_id]?.avatar_url || null; 
+        p._exp = profileMap[p.user_id]?.exp || 0;
+      });
 
       const { data: likes } = await db.from(LIKE_TABLE).select('post_id').eq('user_id', currentUser.id);
       myLikes = new Set((likes || []).map(l => String(l.post_id)));
@@ -235,12 +252,20 @@
         currentReplies = replies || [];
         const replyUserIds = [...new Set(currentReplies.map(r => r.user_id).filter(Boolean))];
         const allIds = [...new Set([...authorIds, ...replyUserIds])];
+        
+        // 👇 回复也一并查 exp
         if (allIds.length > authorIds.length) {
-          const { data: moreProfiles } = await db.from('profiles').select('id, avatar_url').in('id', allIds);
+          const { data: moreProfiles } = await db.from('profiles').select('id, avatar_url, exp').in('id', allIds);
           const newMap = {}; (moreProfiles || []).forEach(p => { newMap[p.id] = p; });
-          currentReplies.forEach(r => { r._avatar = newMap[r.user_id]?.avatar_url || null; });
+          currentReplies.forEach(r => { 
+            r._avatar = newMap[r.user_id]?.avatar_url || null; 
+            r._exp = newMap[r.user_id]?.exp || 0;
+          });
         } else {
-          currentReplies.forEach(r => { r._avatar = profileMap[r.user_id]?.avatar_url || null; });
+          currentReplies.forEach(r => { 
+            r._avatar = profileMap[r.user_id]?.avatar_url || null; 
+            r._exp = profileMap[r.user_id]?.exp || 0;
+          });
         }
       } else currentReplies = [];
 
@@ -274,11 +299,18 @@
       const info = SITE_CONFIG.classes.find(c => c.id === post.class_id);
       return `<span class="post-class-tag">${U.escapeHtml(info ? info.name : post.class_id)}</span>`;
     }
+    
     function highlight(text, keyword) {
       if (!keyword) return U.escapeHtml(text);
       const safe = U.escapeHtml(text);
       const regex = new RegExp('(' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
       return safe.replace(regex, '<mark>$1</mark>');
+    }
+
+    // 👇 生成带颜色的等级标签
+    function getLevelBadge(exp) {
+      const info = U.getLevelInfo(exp || 0);
+      return `<span class="level-badge" style="color:${info.color}; border-color:${info.color};">${info.icon} ${info.name}</span>`;
     }
 
     function renderAll() {
@@ -306,17 +338,23 @@
       const showScopeBadge = activeScope === 'public' || activeScope === 'grade';
       const repliesHtml = topReplies.length ? `<div class="replies">${topReplies.map(r => renderReplyTree(r, 0)).join('')}</div>` : '';
 
+      const isAnon = post.is_anonymous;
+      const displayAuthor = isAnon ? '匿名同学' : post.author;
+      const displayAvatar = isAnon ? null : post._avatar;
+      const authorBadge = isAnon ? '<span class="scope-badge" style="background:#eee; color:#666;">匿名</span>' : getLevelBadge(post._exp); // 👈 加入等级标签
+      const contentHtml = renderMarkdown(post.content);
+
       return `
         <div class="post-item" id="post-${post.id}" data-id="${post.id}">
           <div class="post-head">
-            ${avatarHtml(post._avatar, post.author, 'md')}
+            ${avatarHtml(displayAvatar, displayAuthor, 'md')}
             <div class="post-author-info">
-              <span class="post-author">${highlight(post.author, searchKeyword)} ${showScopeBadge ? scopeBadge(post.scope) : ''} ${classTag(post)}</span>
+              <span class="post-author">${highlight(displayAuthor, searchKeyword)} ${authorBadge} ${showScopeBadge ? scopeBadge(post.scope) : ''} ${classTag(post)}</span>
               <span class="post-time">${U.formatTime(post.created_at)}</span>
             </div>
             ${showDelete ? `<button class="post-delete" data-id="${post.id}" title="删除">×</button>` : ''}
           </div>
-          <div class="post-content">${highlight(post.content, searchKeyword)}</div>
+          <div class="post-content markdown-body">${contentHtml}</div>
           ${renderImages(post.image_urls)}
           <div class="post-actions">
             <button class="action-like ${liked ? 'liked' : ''}" data-id="${post.id}">👍 <span class="like-count">${post.likes || 0}</span></button>
@@ -324,7 +362,7 @@
           </div>
           ${repliesHtml}
           <div class="reply-form" data-post-id="${post.id}" data-parent-id="" style="display:none;">
-            <textarea class="reply-content-input" placeholder="写下你的回复……（输入 @ 可提及同学）" maxlength="300"></textarea>
+            <textarea class="reply-content-input" placeholder="写下你的回复……（支持 Markdown，输入 @ 可提及同学）" maxlength="300"></textarea>
             <div class="reply-form-actions"><button class="btn-cancel">取消</button><button class="btn-send">发送</button></div>
           </div>
         </div>`;
@@ -340,15 +378,20 @@
         const parent = currentReplies.find(r => r.id === reply.parent_id);
         if (parent) replyToHtml = `<span class="reply-to">回复 @${U.escapeHtml(parent.author)}</span> `;
       }
+      
+      const contentHtml = renderMarkdown(reply.content);
+      const levelBadge = getLevelBadge(reply._exp); // 👈 回复也加入等级标签
+
       return `
         <div class="reply-item depth-${actualDepth}" data-id="${reply.id}">
           ${avatarHtml(reply._avatar, reply.author, 'sm')}
           <div class="reply-body">
             <div class="reply-meta">
-              <span class="reply-author">${U.escapeHtml(reply.author)}</span><span class="reply-time">${U.formatTime(reply.created_at)}</span>
+              <span class="reply-author">${U.escapeHtml(reply.author)}</span> ${levelBadge}
+              <span class="reply-time">${U.formatTime(reply.created_at)}</span>
               ${showDelete ? `<button class="reply-delete" data-id="${reply.id}" title="删除">×</button>` : ''}
             </div>
-            <div class="reply-content">${replyToHtml}${U.escapeHtml(reply.content)}</div>
+            <div class="reply-content markdown-body">${replyToHtml}${contentHtml}</div>
             <div class="reply-actions-inline"><button class="reply-to-btn" data-reply-to="${reply.id}" data-post-id="${reply.post_id}">回复</button></div>
             ${childrenHtml}
             <div class="reply-form nested" data-post-id="${reply.post_id}" data-parent-id="${reply.id}" style="display:none;">
@@ -378,18 +421,14 @@
 
     async function deletePost(id) {
       if (!confirm('确定删除这条帖子？所有回复和图片也会一并删除。')) return;
-      
       const post = currentPosts.find(p => String(p.id) === String(id));
       if (post && Array.isArray(post.image_urls) && post.image_urls.length > 0) {
         const pathsToRemove = post.image_urls.map(url => {
           const match = url.split('/forum-images/');
           return match.length > 1 ? match[1] : null;
         }).filter(Boolean);
-        if (pathsToRemove.length > 0) {
-          await db.storage.from('forum-images').remove(pathsToRemove);
-        }
+        if (pathsToRemove.length > 0) await db.storage.from('forum-images').remove(pathsToRemove);
       }
-
       const { error } = await db.from(TABLE).delete().eq('id', id);
       if (error) return alert('删除失败：' + error.message);
       await loadAll(true);
@@ -427,7 +466,7 @@
         if (parentId) payload.parent_id = Number(parentId);
         const { error } = await db.from(REPLY_TABLE).insert(payload);
         if (error) throw error;
-        notifyMentions(content, postId);
+        if (!post.is_anonymous) notifyMentions(content, postId);
         form.querySelector('.reply-content-input').value = ''; form.style.display = 'none'; await loadAll(true);
       } catch (err) { alert('回复失败：' + err.message); }
       finally { sendBtn.disabled = false; sendBtn.textContent = '发送'; }
