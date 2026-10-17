@@ -1,4 +1,4 @@
-/* 用户管理 v2.1.0（三类身份） */
+/* 用户管理 v3.9.0（容错增强） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -107,14 +107,15 @@
 
     async function loadMembers() {
       listEl.innerHTML = '<div class="member-empty">加载中…</div>';
-      const { data, error } = await db.rpc('list_class_members');
-
-      if (error) {
-        listEl.innerHTML = '<div class="member-empty">加载失败：' + U.escapeHtml(error.message) + '</div>';
-        return;
+      try {
+        const { data, error } = await db.rpc('list_class_members');
+        if (error) throw error;
+        
+        members = data || [];
+        render();
+      } catch (error) {
+        listEl.innerHTML = '<div class="member-empty" style="color:var(--danger)">加载失败：' + U.escapeHtml(error.message) + '</div>';
       }
-      members = data || [];
-      render();
     }
 
     function render() {
