@@ -1,4 +1,4 @@
-/* 用户管理 v3.9.0（容错增强） */
+/* 用户管理 v3.9.2（严格权限控制） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -132,7 +132,19 @@
         const roleTag = `<span class="member-role member-role-${m.role}">${U.roleName(m.role)}</span>`;
         const isSelf = m.id === currentUser.id;
         const selfMark = isSelf ? '<span class="member-self">（我）</span>' : '';
+        
+        // 权限逻辑 1：只有老师且非自己，才能修改身份
         const canChangeRole = isTeacher && !isSelf;
+
+        // 权限逻辑 2：重置密码按钮控制
+        let canReset = false;
+        if (!isSelf) {
+          if (currentUser.role === 'teacher') {
+            canReset = true; // 老师可以重置所有人的密码
+          } else if (currentUser.role === 'committee' && m.role === 'student') {
+            canReset = true; // 班委只能重置学生的密码
+          }
+        }
 
         return `
           <div class="member-item">
@@ -149,7 +161,7 @@
                   <option value="committee" ${m.role === 'committee' ? 'selected' : ''}>班委</option>
                   <option value="teacher" ${m.role === 'teacher' ? 'selected' : ''}>老师/辅导员</option>
                 </select>` : ''}
-              <button class="btn btn-ghost btn-small" data-reset="${m.id}" data-name="${U.escapeHtml(m.nickname)}">重置密码</button>
+              ${canReset ? `<button class="btn btn-ghost btn-small" data-reset="${m.id}" data-name="${U.escapeHtml(m.nickname)}">重置密码</button>` : ''}
             </div>
           </div>
         `;
