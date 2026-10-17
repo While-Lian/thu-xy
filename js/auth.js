@@ -1,5 +1,5 @@
 /**
- * 认证模块 v3.4.0
+ * 认证模块 v3.9.2（彻底打通全站班级切换）
  */
 (function () {
   'use strict';
@@ -110,10 +110,12 @@
 
     await loadUserProfile(data.session.user);
 
-    window.currentClassId = window.currentUser.class_id;
+    // 核心：currentClassId 永远指向活跃班级
+    window.currentClassId = window.currentUser.active_class_id || window.currentUser.class_id;
+    
     document.documentElement.style.visibility = 'visible';
 
-    if (!window.currentUser.class_id && !FREE_PAGES.includes(currentPage)) {
+    if (!window.currentClassId && !FREE_PAGES.includes(currentPage)) {
       location.href = 'classes.html';
       return;
     }
@@ -127,22 +129,25 @@
 
     if (error || !data) {
       window.currentUser = {
-        id: user.id,
-        email: user.email,
+        id: user.id, email: user.email,
         nickname: user.user_metadata?.nickname || '同学',
-        class_id: null, grade: null, role: 'student', avatar_url: null,
-        wechat: null, phone: null
+        class_id: null, active_class_id: null, grade: null, role: 'student', avatar_url: null, wechat: null, phone: null
       };
     } else {
+      // 👇 暴力修复核心：把业务页面用的 class_id 直接覆盖为当前活跃班级！
+      // 这样论坛、公告、文件等代码不需要做任何修改，就会自动拉取新班级的数据。
+      const effectiveClassId = data.active_class_id || data.class_id;
+
       window.currentUser = {
-        id: user.id,
+        id: user.id, 
         email: user.email,
         nickname: data.nickname,
-        class_id: data.class_id || null,
+        class_id: effectiveClassId,         // 覆盖为活跃班级
+        active_class_id: data.active_class_id || null, 
         grade: data.grade || null,
         role: data.role,
         avatar_url: data.avatar_url || null,
-        wechat: data.wechat || null,
+        wechat: data.wechat || null, 
         phone: data.phone || null
       };
     }

@@ -1,4 +1,4 @@
-/* 班级事务 v3.4.0（含头像名片 + 一键加入日程） */
+/* 班级事务 v3.9.0（成员墙容错多班查询） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -6,7 +6,7 @@
 
   const $ = (id) => document.getElementById(id);
   const U = window.Utils;
-  const SK = window.Skeleton;
+  const SK = window.Skeleton || { members: () => '<div class="member-wall-empty">加载中…</div>' };
 
   let currentUserGlobal = null;
   let classIdGlobal = null;
@@ -15,7 +15,7 @@
 
   window.addEventListener('user-ready', (e) => {
     currentUserGlobal = e.detail;
-    classIdGlobal = currentUserGlobal.class_id;
+    classIdGlobal = window.currentClassId || currentUserGlobal.class_id;
     isAdminGlobal = U.isAdminRole(currentUserGlobal.role);
     initClassPage();
   });
@@ -318,49 +318,55 @@
       });
     }
 
-    /* ============ 头像墙 + 名片 ============ */
+    /* ============ 头像墙 + 名片（容错处理） ============ */
     async function loadMemberWall() {
       const wall = document.getElementById('member-wall');
       if (!wall) return;
-      wall.innerHTML = SK.members(8);
-
-      // 直接查表，不再依赖 RPC 函数
-      const { data, error } = await db
-        .from('profiles')
-        .select('id, nickname, role, avatar_url, created_at, wechat, phone')
-        .eq('class_id', currentUserGlobal.class_id)
-        .order('created_at', { ascending: true });
-
-      if (error) { 
-        console.error('成员加载失败:', error);
-        wall.innerHTML = `<div class="member-wall-empty" style="color:#e53935;">加载失败: ${U.escapeHtml(error.message)}</div>`; 
-        return; 
-      }
       
-      allMembers = data || [];
-      if (!allMembers.length) { 
-        wall.innerHTML = '<div class="member-wall-empty">暂无成员</div>'; 
-        return; 
-      }
-      
-      wall.innerHTML = allMembers.map(m => {
-        const initial = (m.nickname || '?').charAt(0).toUpperCase();
-        const roleTag = m.role !== 'student' ? `<span class="member-wall-role member-wall-role-${m.role}">${U.roleName(m.role)}</span>` : '';
-        const avatarHtml = m.avatar_url ? `<img src="${m.avatar_url}" class="member-wall-avatar" alt="" />` : `<span class="member-wall-avatar member-wall-avatar-default">${U.escapeHtml(initial)}</span>`;
-        return `
-          <div class="member-wall-item" data-id="${m.id}" title="点击查看名片">
-            ${avatarHtml}
-            <div class="member-wall-name">${U.escapeHtml(m.nickname)}</div>
-            ${roleTag}
-          </div>`;
-      }).join('');
+      try {
+        wall.innerHTML = SK.members(8);
+      } catch (e) {}
 
-      wall.querySelectorAll('.member-wall-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const m = allMembers.find(x => x.id === item.dataset.id);
-          if (m) showMemberCard(m);
+      try {
+        const targetClassId = classId;
+
+        // 👇 直接查表，并用 or 语法包容户口和活跃班级，防止 RPC 报错卡死
+        const { data, error } = await db
+          .from('profiles')
+          .select('id, nickname, role, avatar_url, created_at, wechat, phone')
+          .or(`class_id.eq.${targetClassId},active_class_id.eq.${targetClassId}`)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        
+        allMembers = data || [];
+        if (!allMembers.length) { 
+          wall.innerHTML = '<div class="member-wall-empty">暂无成员</div>'; 
+          return; 
+        }
+        
+        wall.innerHTML = allMembers.map(m => {
+          const initial = (m.nickname || '?').charAt(0).toUpperCase();
+          const roleTag = m.role !== 'student' ? `<span class="member-wall-role member-wall-role-${m.role}">${U.roleName(m.role)}</span>` : '';
+          const avatarHtml = m.avatar_url ? `<img src="${m.avatar_url}" class="member-wall-avatar" alt="" />` : `<span class="member-wall-avatar member-wall-avatar-default">${U.escapeHtml(initial)}</span>`;
+          return `
+            <div class="member-wall-item" data-id="${m.id}" title="点击查看名片">
+              ${avatarHtml}
+              <div class="member-wall-name">${U.escapeHtml(m.nickname)}</div>
+              ${roleTag}
+            </div>`;
+        }).join('');
+
+        wall.querySelectorAll('.member-wall-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const m = allMembers.find(x => x.id === item.dataset.id);
+            if (m) showMemberCard(m);
+          });
         });
-      });
+      } catch (err) {
+        console.error('成员加载失败:', err);
+        wall.innerHTML = `<div class="member-wall-empty" style="color:#e53935;">加载失败: ${U.escapeHtml(err.message || '网络异常')}</div>`; 
+      }
     }
 
     function showMemberCard(m) {

@@ -1,4 +1,4 @@
-/* 班级广场 v3.8.0（无需退出即可建班/加班/切班） */
+/* 班级广场 v3.8.1 */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -8,7 +8,7 @@
   let currentUser = null;
   let classes = [];
   let myRequests = [];
-  let myManagedClasses = []; // 老师管理的班级列表
+  let myManagedClasses = []; 
   let applyingClassId = null;
   let deletingClassId = null;
   let deletingClassName = '';
@@ -19,7 +19,6 @@
   });
 
   async function init() {
-    // 绑定各种弹窗按钮
     document.getElementById('create-class-btn').addEventListener('click', openCreateModal);
     document.getElementById('apply-cancel').addEventListener('click', closeApplyModal);
     document.getElementById('apply-save').addEventListener('click', submitApply);
@@ -31,13 +30,12 @@
       if (e.key === 'Enter') submitDelete();
     });
 
-    // 关键：只要角色是老师，不管有没有加入班级，永远显示"创建班级"按钮
     if (currentUser.role === 'teacher') {
       document.getElementById('create-class-btn').style.display = '';
     }
 
-    // 如果还没加入任何班级，显示顶部提醒
-    if (!currentUser.class_id) {
+    const myActiveId = currentUser.active_class_id || currentUser.class_id;
+    if (!myActiveId) {
       document.getElementById('no-class-notice').style.display = '';
     }
 
@@ -45,15 +43,11 @@
   }
 
   async function loadAll() {
-    // 加载全部班级、我的申请记录
     await Promise.all([loadClasses(), loadMyRequests()]);
-    
-    // 如果是老师，额外加载我管理的班级列表
     if (currentUser.role === 'teacher') {
       const { data } = await db.rpc('get_my_managed_classes');
       myManagedClasses = data || [];
     }
-    
     render();
   }
 
@@ -79,19 +73,12 @@
     const list = document.getElementById('my-requests-list');
 
     const showList = myRequests.filter(r => r.status !== 'approved');
-    if (showList.length === 0) {
-      block.style.display = 'none';
-      return;
-    }
+    if (showList.length === 0) { block.style.display = 'none'; return; }
     block.style.display = '';
     list.innerHTML = showList.map(r => {
       const roleName = U.roleName(r.requested_role);
-      const statusMap = {
-        pending: '<span class="req-status req-status-pending">等待审批</span>',
-        rejected: '<span class="req-status req-status-rejected">已拒绝</span>'
-      };
-      const rejectHtml = r.reject_reason
-        ? `<div class="req-reject-reason">拒绝理由：${U.escapeHtml(r.reject_reason)}</div>` : '';
+      const statusMap = { pending: '<span class="req-status req-status-pending">等待审批</span>', rejected: '<span class="req-status req-status-rejected">已拒绝</span>' };
+      const rejectHtml = r.reject_reason ? `<div class="req-reject-reason">拒绝理由：${U.escapeHtml(r.reject_reason)}</div>` : '';
       return `
         <div class="request-item">
           <div class="req-info">
@@ -106,46 +93,42 @@
 
   function renderClasses() {
     const listEl = document.getElementById('classes-list');
-    if (!classes.length) {
-      listEl.innerHTML = '<div class="class-empty">暂无班级，等待老师创建</div>';
-      return;
-    }
+    if (!classes.length) { listEl.innerHTML = '<div class="class-empty">暂无班级，等待老师创建</div>'; return; }
 
     const myReqMap = {};
     myRequests.forEach(r => { myReqMap[r.class_id] = r; });
-    
-    // 把管理的班级转成 Map 方便查询
     const managedMap = {};
     myManagedClasses.forEach(c => { managedMap[c.id] = true; });
+    
+    // 👇 核心修复：使用 active_class_id 判断当前
+    const myActiveId = currentUser.active_class_id || currentUser.class_id;
 
     listEl.innerHTML = classes.map(c => {
-      const isCurrent = currentUser.class_id === c.id;
       const isManaged = managedMap[c.id];
+      const isCurrent = myActiveId === c.id;
+      const isMyClass = isManaged || isCurrent; 
+      
       const myReq = myReqMap[c.id];
       const isCreator = currentUser.id === c.creator_id;
 
       let actionHtml = '';
       
-      // 1. 这是当前正在查看的班级
-      if (isCurrent) {
-        actionHtml = `<span class="class-tag class-tag-mine">✓ 当前所在班级</span>`;
-        if (isCreator) {
-          actionHtml += ` <button class="btn btn-danger btn-small" data-delete-class="${c.id}" data-name="${U.escapeHtml(c.name)}" style="margin-left:6px;">删除</button>`;
+      if (isMyClass) {
+        if (isCurrent) {
+          actionHtml = `<span class="class-tag class-tag-mine">✓ 当前所在班级</span>`;
+          if (isCreator) {
+            actionHtml += ` <button class="btn btn-danger btn-small" data-delete-class="${c.id}" data-name="${U.escapeHtml(c.name)}" style="margin-left:6px;">删除</button>`;
+          }
+        } else {
+          actionHtml = `
+            <span class="class-tag class-tag-mine" style="background:#e3f2fd; color:#1565c0; border-color:#bbdefb;">✓ 我管理的班级</span>
+            <button class="btn btn-primary btn-small" data-switch-class="${c.id}" style="margin-left:6px;">切换至此</button>
+          `;
         }
-      } 
-      // 2. 老师管理了这个班级，但当前不在这个班（显示切换按钮）
-      else if (isManaged) {
-        actionHtml = `<button class="btn btn-ghost btn-small" data-switch-class="${c.id}">切换至此班级</button>`;
-      }
-      // 3. 申请已提交，等待审批
-      else if (myReq && myReq.status === 'pending') {
+      } else if (myReq && myReq.status === 'pending') {
         actionHtml = `<span class="class-tag class-tag-pending">⏳ 等待审批</span>`;
-      } 
-      // 4. 没在这个班，也没申请（可以直接申请）
-      else {
-        // 老师可以随时申请加入其他班级；普通学生如果已有班级，限制申请（防止误操作）
-        const canApply = currentUser.role === 'teacher' || !currentUser.class_id;
-        
+      } else {
+        const canApply = currentUser.role === 'teacher' || !myActiveId;
         if (canApply) {
           actionHtml = `<button class="btn btn-primary btn-small" data-apply="${c.id}" data-name="${U.escapeHtml(c.name)}">申请加入</button>`;
         } else {
@@ -174,28 +157,23 @@
     listEl.querySelectorAll('[data-delete-class]').forEach(btn => {
       btn.addEventListener('click', () => openDeleteModal(btn.dataset.deleteClass, btn.dataset.name));
     });
-    // 绑定切换班级事件
     listEl.querySelectorAll('[data-switch-class]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const targetId = btn.dataset.switchClass;
-        btn.disabled = true;
-        btn.textContent = '切换中…';
+        btn.disabled = true; btn.textContent = '切换中…';
         const { error } = await db.rpc('switch_teacher_class', { p_class_id: targetId });
         if (error) {
-          alert('切换失败：' + error.message);
-          btn.disabled = false; btn.textContent = '切换至此班级';
+          alert('切换失败：' + error.message); btn.disabled = false; btn.textContent = '切换至此';
         } else {
-          location.href = 'index.html'; // 切换成功后进主页
+          location.href = 'index.html'; 
         }
       });
     });
   }
 
-  /* ============ 申请加入 ============ */
   function openApplyModal(classId, className) {
     applyingClassId = classId;
     document.getElementById('apply-class-name').textContent = className;
-    // 如果当前是老师，默认选中老师身份
     document.getElementById('apply-role').value = currentUser.role === 'teacher' ? 'teacher' : 'student';
     document.getElementById('apply-message').value = '';
     document.getElementById('apply-msg').textContent = '';
@@ -214,44 +192,27 @@
     const msgEl = document.getElementById('apply-msg');
     const btn = document.getElementById('apply-save');
 
-    btn.disabled = true;
-    btn.textContent = '提交中…';
-    msgEl.textContent = '';
+    btn.disabled = true; btn.textContent = '提交中…'; msgEl.textContent = '';
 
     try {
-      const { error } = await db.rpc('apply_join_class', {
-        p_class_id: applyingClassId,
-        p_role: role,
-        p_message: message || null
-      });
+      const { error } = await db.rpc('apply_join_class', { p_class_id: applyingClassId, p_role: role, p_message: message || null });
       if (error) throw error;
-      closeApplyModal();
-      alert('申请已提交，请等待审批');
-      await loadMyRequests();
-      render();
+      closeApplyModal(); alert('申请已提交，请等待审批'); await loadMyRequests(); render();
     } catch (e) {
-      msgEl.textContent = e.message || '申请失败';
-      msgEl.className = 'form-msg error';
+      msgEl.textContent = e.message || '申请失败'; msgEl.className = 'form-msg error';
     } finally {
-      btn.disabled = false;
-      btn.textContent = '提交申请';
+      btn.disabled = false; btn.textContent = '提交申请';
     }
   }
 
-  /* ============ 创建班级 ============ */
   function openCreateModal() {
-    document.getElementById('create-id').value = '';
-    document.getElementById('create-name').value = '';
-    document.getElementById('create-grade').value = 'xingjian2026';
-    document.getElementById('create-desc').value = '';
-    document.getElementById('create-msg').textContent = '';
-    document.getElementById('create-modal').style.display = 'flex';
+    document.getElementById('create-id').value = ''; document.getElementById('create-name').value = '';
+    document.getElementById('create-grade').value = 'xingjian2026'; document.getElementById('create-desc').value = '';
+    document.getElementById('create-msg').textContent = ''; document.getElementById('create-modal').style.display = 'flex';
     document.getElementById('create-id').focus();
   }
 
-  function closeCreateModal() {
-    document.getElementById('create-modal').style.display = 'none';
-  }
+  function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
 
   async function submitCreate() {
     const id = document.getElementById('create-id').value.trim();
@@ -261,52 +222,27 @@
     const msgEl = document.getElementById('create-msg');
     const btn = document.getElementById('create-save');
 
-    if (!id || !name) {
-      msgEl.textContent = '请填写班级 ID 和班级名';
-      msgEl.className = 'form-msg error';
-      return;
-    }
+    if (!id || !name) { msgEl.textContent = '请填写班级 ID 和班级名'; msgEl.className = 'form-msg error'; return; }
 
-    btn.disabled = true;
-    btn.textContent = '创建中…';
+    btn.disabled = true; btn.textContent = '创建中…';
 
     try {
-      const { error } = await db.rpc('create_class', {
-        p_id: id,
-        p_name: name,
-        p_grade: grade || null,
-        p_description: desc || null
-      });
+      const { error } = await db.rpc('create_class', { p_id: id, p_name: name, p_grade: grade || null, p_description: desc || null });
       if (error) throw error;
-      closeCreateModal();
-      alert('班级创建成功！当前页面将刷新');
-      // 建班成功后后端会自动将 class_id 切换为新建的班级，直接进主页
-      location.href = 'index.html';
+      closeCreateModal(); alert('班级创建成功！当前页面将刷新'); location.href = 'index.html';
     } catch (e) {
-      msgEl.textContent = e.message || '创建失败';
-      msgEl.className = 'form-msg error';
-      btn.disabled = false;
-      btn.textContent = '创建';
+      msgEl.textContent = e.message || '创建失败'; msgEl.className = 'form-msg error'; btn.disabled = false; btn.textContent = '创建';
     }
   }
 
-  /* ============ 删除班级 ============ */
   function openDeleteModal(classId, className) {
-    deletingClassId = classId;
-    deletingClassName = className;
-    document.getElementById('delete-class-name').textContent = className;
-    document.getElementById('delete-class-confirm-input').value = '';
-    document.getElementById('delete-class-msg').textContent = '';
-    document.getElementById('delete-class-msg').className = 'form-msg';
-    document.getElementById('delete-class-modal').style.display = 'flex';
-    document.getElementById('delete-class-confirm-input').focus();
+    deletingClassId = classId; deletingClassName = className;
+    document.getElementById('delete-class-name').textContent = className; document.getElementById('delete-class-confirm-input').value = '';
+    document.getElementById('delete-class-msg').textContent = ''; document.getElementById('delete-class-msg').className = 'form-msg';
+    document.getElementById('delete-class-modal').style.display = 'flex'; document.getElementById('delete-class-confirm-input').focus();
   }
 
-  function closeDeleteModal() {
-    document.getElementById('delete-class-modal').style.display = 'none';
-    deletingClassId = null;
-    deletingClassName = '';
-  }
+  function closeDeleteModal() { document.getElementById('delete-class-modal').style.display = 'none'; deletingClassId = null; deletingClassName = ''; }
 
   async function submitDelete() {
     if (!deletingClassId) return;
@@ -314,27 +250,16 @@
     const msgEl = document.getElementById('delete-class-msg');
     const btn = document.getElementById('delete-class-confirm');
 
-    if (input !== deletingClassName) {
-      msgEl.textContent = '输入的班级名不匹配';
-      msgEl.className = 'form-msg error';
-      return;
-    }
+    if (input !== deletingClassName) { msgEl.textContent = '输入的班级名不匹配'; msgEl.className = 'form-msg error'; return; }
 
-    btn.disabled = true;
-    btn.textContent = '删除中…';
-    msgEl.textContent = '';
+    btn.disabled = true; btn.textContent = '删除中…'; msgEl.textContent = '';
 
     try {
       const { error } = await db.rpc('delete_class', { p_class_id: deletingClassId });
       if (error) throw error;
-      closeDeleteModal();
-      alert('班级已删除');
-      location.href = 'classes.html';
+      closeDeleteModal(); alert('班级已删除'); location.href = 'classes.html';
     } catch (e) {
-      msgEl.textContent = e.message || '删除失败';
-      msgEl.className = 'form-msg error';
-      btn.disabled = false;
-      btn.textContent = '确认删除';
+      msgEl.textContent = e.message || '删除失败'; msgEl.className = 'form-msg error'; btn.disabled = false; btn.textContent = '确认删除';
     }
   }
 })();
