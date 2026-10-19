@@ -66,9 +66,25 @@
         <span id="about-devs-list"></span>
       </div>
       
-      <!-- 更新日志保留原样即可，这里省略以节省空间，请保留你本地的日志内容 -->
+      <!-- 更新日志 -->
       <div class="changelog">
         <div class="changelog-title">📝 更新日志</div>
+
+        <!-- 👇 插入的 v6.0.0 更新日志 -->
+        <div class="changelog-entry">
+          <div class="changelog-head">
+            <span class="changelog-version">v6.0.0</span>
+            <span class="changelog-date">2026-10</span>
+          </div>
+          <ul class="changelog-list">
+            <li><b>清华身份极速登录</b>：重磅接入清华 Git 身份认证（OAuth 2.0 PKCE）。支持“清华一键登录”与“原账号密码登录”双通道并存。老用户首次授权后将自动开启“本地免密通行”，以后点一下直接进系统！</li>
+            <li><b>年级交流大厅</b>：打破班级壁垒，全新上线同年级同学私聊功能。支持实时消息收发、未读红点提示，并且列表会显示实时的<b>“在线状态（绿点）”</b>与最后在线时间，找人更方便。</li>
+            <li><b>班委专属：一键集体 DDL</b>：班委/老师专属神技。在“班级事务”页点击红色按钮，输入标题和时间，瞬间为全班所有同学的个人管理列表中插入该 DDL。催收青年大学习、统一报名，再也不怕群聊刷屏！</li>
+            <li><b>网络学堂 DDL 极速同步</b>：全新上线的书签同步工具，一键扫描本学期所有课程的未交作业，并自动带上课程名写入 DDL。特别添加了“沉浸式进度条”，直观展示扫描进度，告别卡顿假象。</li>
+            <li><b>底层架构重构</b>：优化了 Supabase 数据库触发器与 RLS 安全策略，修复了部分新用户注册失败、按钮卡死、状态不同步等历史遗留 Bug，全面提升系统丝滑度。</li>
+          </ul>
+        </div>
+        <!-- 👆 v6.0.0 更新日志结束 -->
 
         <div class="changelog-entry">
           <div class="changelog-head">
@@ -134,6 +150,8 @@
           </ul>
         </div>
       </div>
+    </section>
+  </main>
 
   <footer class="site-footer">
     <p>THU-XY · 清华大学行健书院班级共建系统</p>
