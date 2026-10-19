@@ -24,6 +24,7 @@
     </div>
 
     <div class="login-card">
+      <!-- 常规登录 -->
       <div id="login-view">
         <h2 class="login-title">登 录</h2>
         
@@ -41,6 +42,25 @@
         <div class="login-options">
           <a href="#" id="forgot-link">忘记密码？</a>
           <a href="#" id="to-register">立即注册！</a>
+        </div>
+      </div>
+
+      <!-- 👇 新增：针对老账号的合并验证表单 -->
+      <div id="merge-view" style="display:none;">
+        <h2 class="login-title">授权合并</h2>
+        <p style="color:#666;text-align:center;margin-bottom:16px;font-size:13px;line-height:1.5;">
+          检测到清华邮箱 <b id="merge-email" style="color:var(--primary);"></b> 已绑定原账号。<br>
+          为了不影响您原有的登录方式，请输入原密码完成合并。
+        </p>
+        <form id="merge-form">
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="merge-password" placeholder="请输入您原本的登录密码" required />
+          </div>
+          <button type="submit" class="btn-login">验证并合并登录</button>
+        </form>
+        <div class="login-options" style="justify-content:center; margin-top:16px;">
+          <a href="#" id="merge-cancel">取消合并，返回常规登录</a>
         </div>
       </div>
 
@@ -80,12 +100,32 @@
       const REDIRECT_URI = 'https://while-lian.github.io/thu-xy/oauth-callback.html'; 
       
       const db = window.supabaseClient;
-      const gitBtn = document.getElementById('tsinghua-git-login');
       const authMsg = document.getElementById('auth-msg');
-      const loginEmailInput = document.getElementById('login-email');
+      
+      const views = {
+        login: document.getElementById('login-view'),
+        merge: document.getElementById('merge-view'),
+        register: document.getElementById('register-view'),
+        forgot: document.getElementById('forgot-view')
+      };
 
-      gitBtn.addEventListener('click', async () => {
+      function showView(name) {
+        Object.keys(views).forEach(k => {
+          views[k].style.display = k === name ? 'block' : 'none';
+        });
+        authMsg.textContent = '';
+      }
+
+      // 切换视图事件
+      document.getElementById('merge-cancel').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('login');
+      });
+
+      // 1. 点击清华认证
+      document.getElementById('tsinghua-git-login').addEventListener('click', async () => {
         try {
+          const gitBtn = document.getElementById('tsinghua-git-login');
           gitBtn.disabled = true;
           gitBtn.innerHTML = '<span style="font-size:18px;">⏳</span> 正在连接...';
           
@@ -112,23 +152,25 @@
         } catch (err) {
           authMsg.textContent = '发起认证失败：' + err.message;
           authMsg.className = 'auth-msg error';
-          gitBtn.disabled = false;
         }
       });
 
+      // 2. 监听回调
+      let currentGitEmail = '';
       window.addEventListener('message', async (event) => {
         if (event.data && event.data.type === 'TSINGHUA_GIT_AUTH') {
           const gitUser = event.data.user;
           if (!gitUser.email) return authMsg.textContent = '认证成功，但未获取到清华邮箱。';
 
-          loginEmailInput.value = gitUser.email;
-          authMsg.textContent = '清华身份验证成功，正在校验...';
+          currentGitEmail = gitUser.email;
+          document.getElementById('login-email').value = gitUser.email;
+          authMsg.textContent = '清华身份验证成功，正在登录...';
           authMsg.className = 'auth-msg';
 
-          // 1. 尝试内部快捷密码登录（针对之前用清华登录过的用户）
           const internalPassword = `THU_XY_GIT_${gitUser.id}_SECURE_2026`;
 
           try {
+            // 1. 尝试内部密码登录
             let { data: signInData } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
@@ -141,7 +183,7 @@
               return;
             }
 
-            // 2. 尝试注册（针对全新用户）
+            // 2. 尝试注册
             const { data: signUpData, error: signUpError } = await db.auth.signUp({
               email: gitUser.email,
               password: internalPassword,
@@ -155,42 +197,22 @@
               return;
             }
 
-            // 3. 【铁板判断】是否是老账号？
-            // 如果 Supabase 的返回表明该邮箱已被注册，或者 identities 是空数组，说明是老账号
+            // 3. 检测到已存在 -> 切换到合并授权视图
             const errorMsg = signUpError ? signUpError.message.toLowerCase() : '';
-            const isAlreadyExist = errorMsg.includes('already') || 
-                                   errorMsg.includes('已注册') || 
-                                   (signUpData?.user && signUpData.user.identities && signUpData.user.identities.length === 0);
+            const isAlreadyExist = errorMsg.includes('already') || errorMsg.includes('已注册') || (signUpData?.user && signUpData.user.identities && signUpData.user.identities.length === 0);
 
             if (isAlreadyExist) {
-              const originalPwd = prompt('系统检测到该清华邮箱已绑定原账号。\n为了账号安全且不影响您原有的密码，请输入一次您原本的【登录密码】以完成双通道合并：');
-              
-              if (!originalPwd) {
-                authMsg.textContent = '已取消合并。如果您忘记了密码，请联系班委重置。';
-                authMsg.className = 'auth-msg error';
-                return;
-              }
-
-              // 用原密码验证，验证通过则直接登录
-              const { data: oldPwdData, error: oldPwdError } = await db.auth.signInWithPassword({
-                email: gitUser.email,
-                password: originalPwd
-              });
-
-              if (oldPwdData && oldPwdData.session) {
-                authMsg.textContent = '合并成功！您以后的清华快捷登录与原密码均可进入此账号。';
-                authMsg.className = 'auth-msg success';
-                setTimeout(() => { window.location.href = 'index.html'; }, 1200);
-              } else {
-                authMsg.textContent = '密码错误。您可以关闭弹窗使用密码登录，或联系管理员。';
-                authMsg.className = 'auth-msg error';
-              }
+              // 👇 核心修改：无弹窗，直接展现内嵌表单
+              document.getElementById('merge-email').textContent = gitUser.email;
+              document.getElementById('merge-password').value = '';
+              showView('merge');
+              authMsg.textContent = '需要验证原密码完成合并';
+              authMsg.className = 'auth-msg';
               return;
             }
 
-            // 兜底报错（如果既没 session 也没匹配上已注册）
             if (signUpData?.user && !signUpData.session) {
-              authMsg.textContent = '账号创建成功，但 Supabase 开启了邮件验证。请让管理员在后台关闭 Confirm Email。';
+              authMsg.textContent = '注册成功，请让管理员关闭 Supabase 的 Confirm Email。';
               authMsg.className = 'auth-msg error';
             } else {
               throw new Error(signUpError ? signUpError.message : '未知注册错误');
@@ -200,6 +222,30 @@
             authMsg.textContent = '系统提示：' + (err.message || err);
             authMsg.className = 'auth-msg error';
           }
+        }
+      });
+
+      // 3. 合并视图提交验证
+      document.getElementById('merge-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const originalPwd = document.getElementById('merge-password').value;
+        if (!originalPwd) return;
+
+        authMsg.textContent = '正在验证原密码...';
+        authMsg.className = 'auth-msg';
+
+        const { data: oldPwdData, error: oldPwdError } = await db.auth.signInWithPassword({
+          email: currentGitEmail,
+          password: originalPwd
+        });
+
+        if (oldPwdData && oldPwdData.session) {
+          authMsg.textContent = '合并成功！双通道已打通。';
+          authMsg.className = 'auth-msg success';
+          setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+        } else {
+          authMsg.textContent = '密码错误，请重试或联系管理员。';
+          authMsg.className = 'auth-msg error';
         }
       });
 
