@@ -21,11 +21,9 @@
     <div class="login-brand">
       <div class="login-logo">清</div>
       <h1>清华大学行健书院班级共建系统</h1>
-      <p class="login-brand-sub">THU Xingjian College · Class Co-building System</p>
     </div>
 
     <div class="login-card">
-      <!-- 登录 -->
       <div id="login-view">
         <h2 class="login-title">登 录</h2>
         
@@ -52,42 +50,22 @@
         </div>
       </div>
 
-      <!-- 注册 -->
       <div id="register-view" style="display:none;">
         <h2 class="login-title">注 册</h2>
         <form id="register-form">
-          <div class="input-wrap">
-            <span class="input-icon">✉️</span>
-            <input type="email" id="reg-email" placeholder="邮箱" required />
-          </div>
-          <div class="input-wrap">
-            <span class="input-icon">🔒</span>
-            <input type="password" id="reg-password" placeholder="密码（至少 6 位）" required minlength="6" />
-          </div>
-          <div class="input-wrap">
-            <span class="input-icon">👤</span>
-            <input type="text" id="reg-nickname" placeholder="昵称（同学看到的名字）" required maxlength="20" />
-          </div>
-          <div class="input-wrap">
-            <span class="input-icon">🔑</span>
-            <input type="text" id="reg-invite-code" placeholder="邀请码（老师/辅导员填，同学留空）" />
-          </div>
+          <div class="input-wrap"><span class="input-icon">✉️</span><input type="email" id="reg-email" placeholder="邮箱" required /></div>
+          <div class="input-wrap"><span class="input-icon">🔒</span><input type="password" id="reg-password" placeholder="密码（至少 6 位）" required minlength="6" /></div>
+          <div class="input-wrap"><span class="input-icon">👤</span><input type="text" id="reg-nickname" placeholder="昵称（同学看到的名字）" required maxlength="20" /></div>
+          <div class="input-wrap"><span class="input-icon">🔑</span><input type="text" id="reg-invite-code" placeholder="邀请码（老师/辅导员填，同学留空）" /></div>
           <button type="submit" class="btn-login">注 册</button>
         </form>
-        <div class="login-options">
-          <a href="#" id="to-login">已有账号？返回登录</a>
-        </div>
+        <div class="login-options"><a href="#" id="to-login">已有账号？返回登录</a></div>
       </div>
 
-      <!-- 忘记密码 -->
       <div id="forgot-view" style="display:none;">
         <h2 class="login-title">忘记密码</h2>
-        <p style="color:#666;font-size:14px;line-height:1.8;text-align:center;margin:16px 0 24px;">
-          请联系<b style="color:#660874;">班级管理员</b>协助重置密码。
-        </p>
-        <div class="login-options" style="justify-content:center;">
-          <a href="#" id="forgot-back">← 返回登录</a>
-        </div>
+        <p style="color:#666;font-size:14px;line-height:1.8;text-align:center;margin:16px 0 24px;">请联系班级管理员协助重置密码。</p>
+        <div class="login-options" style="justify-content:center;"><a href="#" id="forgot-back">← 返回登录</a></div>
       </div>
 
       <p id="auth-msg" class="auth-msg"></p>
@@ -140,7 +118,6 @@
           authMsg.textContent = '发起认证失败：' + err.message;
           authMsg.className = 'auth-msg error';
           gitBtn.disabled = false;
-          gitBtn.innerHTML = '<span style="font-size:18px;">🎓</span> 使用清华 Git 身份登录';
         }
       });
 
@@ -157,46 +134,45 @@
           const internalPassword = `THU_XY_GIT_${gitUser.id}_SECURE_2026`;
 
           try {
-            // 1. 先尝试直接登录
-            const { data: signInData, error: signInError } = await db.auth.signInWithPassword({
+            // 1. 先尝试登录
+            let { data: signInData, error: signInError } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
             });
 
-            if (!signInError && signInData.session) {
+            if (signInData && signInData.session) {
               authMsg.textContent = '登录成功，正在进入系统...';
               authMsg.className = 'auth-msg success';
               window.location.href = 'index.html';
               return;
             }
 
-            // 2. 如果没登进去，说明是新用户，自动注册
+            // 2. 登录失败（新用户），尝试注册
             const { data: signUpData, error: signUpError } = await db.auth.signUp({
               email: gitUser.email,
               password: internalPassword,
               options: { data: { nickname: gitUser.name || gitUser.username || '同学' } }
             });
 
-            if (signUpError) {
-              if (signUpError.message.includes('already registered')) {
-                throw new Error('该邮箱已用密码注册过，请使用原密码登录或联系班委重置。');
-              }
-              throw signUpError;
+            if (signUpError && signUpError.message.includes('already registered')) {
+              throw new Error('该邮箱已用密码注册过，请使用原密码登录。');
             }
 
-            // 3. 【核心修复】注册完后，立刻用内部密码再强行登录一次
-            // 因为刚才的 SQL 触发器已经在底层帮我们确认了用户，这次登录会直接成功拿回 Session
+            // 3. 【强杀逻辑】无论注册返回什么，直接调 RPC 把用户的确认状态改成已确认
+            await db.rpc('admin_force_confirm', { p_email: gitUser.email });
+
+            // 4. 再次尝试强行登录
             const { data: retryData, error: retryError } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
             });
 
-            if (!retryError && retryData.session) {
+            if (retryData && retryData.session) {
               authMsg.textContent = '账号创建成功，正在进入系统...';
               authMsg.className = 'auth-msg success';
               window.location.href = 'index.html';
             } else {
-              throw new Error('自动登录失败，请稍后重试。');
+              throw new Error('自动登录失败：' + (retryError ? retryError.message : '未知错误'));
             }
 
           } catch (err) {
