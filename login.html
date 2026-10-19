@@ -113,11 +113,11 @@
 
   <script>
     // ==========================================
-    // 清华 Git OAuth PKCE 弹窗认证逻辑
+    // 清华 Git OAuth PKCE 弹窗认证逻辑（免邮件直达）
     // ==========================================
     (function() {
       // ⚠️ 请替换为你在 GitLab 拿到的 Client ID
-      const GIT_CLIENT_ID = 'f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea'; 
+      const GIT_CLIENT_ID = '你的_Application_ID'; 
       // ⚠️ 请替换为你实际部署的回调地址
       const REDIRECT_URI = 'https://while-lian.github.io/thu-xy/oauth-callback.html'; 
       
@@ -126,7 +126,7 @@
       const authMsg = document.getElementById('auth-msg');
       const loginEmailInput = document.getElementById('login-email');
 
-      // 1. 点击按钮发起 PKCE 授权（弹出新窗口）
+      // 1. 发起 PKCE 授权
       gitBtn.addEventListener('click', async () => {
         try {
           gitBtn.disabled = true;
@@ -148,10 +148,8 @@
           authUrl.searchParams.set('code_challenge', codeChallenge);
           authUrl.searchParams.set('code_challenge_method', 'S256');
 
-          // 弹出新窗口进行认证
           window.open(authUrl.toString(), 'THU_AUTH', 'width=600,height=700');
           
-          // 恢复按钮，等待弹窗回传消息
           gitBtn.disabled = false;
           gitBtn.innerHTML = '<span style="font-size:18px;">🎓</span> 使用清华 Git 身份登录';
         } catch (err) {
@@ -162,40 +160,73 @@
         }
       });
 
-      // 2. 监听来自 oauth-callback.html 的回传信息
+      // 2. 监听弹窗回传信息
       window.addEventListener('message', async (event) => {
         if (event.data && event.data.type === 'TSINGHUA_GIT_AUTH') {
           const gitUser = event.data.user;
           console.log('成功获取清华身份：', gitUser);
 
-          if (gitUser.email) {
-            // 自动填入邮箱框
-            loginEmailInput.value = gitUser.email;
-            
-            authMsg.textContent = '清华身份认证成功，正在校验账号...';
-            authMsg.className = 'auth-msg';
+          if (!gitUser.email) {
+            return authMsg.textContent = '认证成功，但未获取到清华邮箱。';
+          }
 
-            // 使用 Supabase 魔法链接（Email OTP）进行免密登录
-            // 提示：如果没收到邮件，请去 Supabase 检查是否开启了 Email 登录。
-            const { error } = await db.auth.signInWithOtp({
+          loginEmailInput.value = gitUser.email;
+          authMsg.textContent = '清华身份验证成功，正在免密登录...';
+          authMsg.className = 'auth-msg';
+
+          // 【核心修改】利用 GitLab 的唯一 ID 生成系统内部安全密码
+          // 只要 GitLab 的 ID 不变，这个密码就永远不会变，可以用来静默登录
+          const internalPassword = `THU_XY_GIT_${gitUser.id}_SECURE_2026`;
+
+          try {
+            // 尝试直接用内部密码登录
+            const { data: signInData, error: signInError } = await db.auth.signInWithPassword({
               email: gitUser.email,
+              password: internalPassword
+            });
+
+            if (!signInError) {
+              // 登录成功
+              authMsg.textContent = '登录成功，正在进入系统...';
+              authMsg.className = 'auth-msg success';
+              window.location.href = 'index.html';
+              return;
+            }
+
+            // 如果登录失败（通常是因为第一次用 Git 登录，系统里还没账号）
+            // 则自动帮用户注册，并把密码设为刚刚生成的内部安全密码
+            const { data: signUpData, error: signUpError } = await db.auth.signUp({
+              email: gitUser.email,
+              password: internalPassword,
               options: {
-                shouldCreateUser: true,
                 data: {
                   nickname: gitUser.name || gitUser.username || '同学'
                 }
               }
             });
 
-            if (error) {
-              authMsg.textContent = '认证成功，但自动登录失败：' + error.message;
-              authMsg.className = 'auth-msg error';
-            } else {
-              authMsg.textContent = '认证成功！已向您的清华邮箱发送登录链接，请查收邮件并点击链接完成登录。';
-              authMsg.className = 'auth-msg success';
+            if (signUpError) {
+              // 如果报错说“User already registered”，说明他之前用普通密码注册过
+              if (signUpError.message.includes('already registered')) {
+                throw new Error('检测到您之前已注册过账号，请使用原密码登录，或联系班委重置密码。');
+              }
+              throw signUpError;
             }
-          } else {
-            authMsg.textContent = '认证成功，但未获取到清华邮箱，请手动注册。';
+
+            // 注册成功
+            authMsg.textContent = '账号创建成功，正在进入系统...';
+            authMsg.className = 'auth-msg success';
+            
+            // 检查是否立即生成了 session (如果 Supabase 开启了邮箱确认，这里会没有 session)
+            if (signUpData.session) {
+               window.location.href = 'index.html';
+            } else {
+               // 兜底提示：说明后台没关邮箱验证
+               throw new Error('自动注册成功，但 Supabase 后台开启了邮箱验证。请让管理员在后台关闭 Confirm Email。');
+            }
+
+          } catch (err) {
+            authMsg.textContent = err.message;
             authMsg.className = 'auth-msg error';
           }
         }
