@@ -83,7 +83,6 @@
       const gitBtn = document.getElementById('tsinghua-git-login');
       const authMsg = document.getElementById('auth-msg');
       const loginEmailInput = document.getElementById('login-email');
-      const loginPasswordInput = document.getElementById('login-password');
 
       gitBtn.addEventListener('click', async () => {
         try {
@@ -126,18 +125,17 @@
           authMsg.textContent = '清华身份验证成功，正在校验...';
           authMsg.className = 'auth-msg';
 
-          // 内部快捷密码
+          // 1. 尝试内部快捷密码登录（针对之前用清华登录过的用户）
           const internalPassword = `THU_XY_GIT_${gitUser.id}_SECURE_2026`;
 
           try {
-            // 1. 尝试内部密码直接登录（针对之前已经合并过的用户）
             let { data: signInData } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
             });
 
             if (signInData && signInData.session) {
-              authMsg.textContent = '合并登录成功，正在进入系统...';
+              authMsg.textContent = '登录成功，正在进入系统...';
               authMsg.className = 'auth-msg success';
               window.location.href = 'index.html';
               return;
@@ -157,41 +155,49 @@
               return;
             }
 
-            // 3. 如果报错说已存在，说明是老用户。弹窗让他输入原密码进行授权合并！
-            if (signUpError && signUpError.message.includes('already registered')) {
-              const originalPwd = prompt('检测到您的清华邮箱已绑定原账号。\n为了账号安全，请输入一次您原本的【登录密码】完成合并授权：');
+            // 3. 【铁板判断】是否是老账号？
+            // 如果 Supabase 的返回表明该邮箱已被注册，或者 identities 是空数组，说明是老账号
+            const errorMsg = signUpError ? signUpError.message.toLowerCase() : '';
+            const isAlreadyExist = errorMsg.includes('already') || 
+                                   errorMsg.includes('已注册') || 
+                                   (signUpData?.user && signUpData.user.identities && signUpData.user.identities.length === 0);
+
+            if (isAlreadyExist) {
+              const originalPwd = prompt('系统检测到该清华邮箱已绑定原账号。\n为了账号安全且不影响您原有的密码，请输入一次您原本的【登录密码】以完成双通道合并：');
               
               if (!originalPwd) {
-                authMsg.textContent = '已取消合并登录。';
+                authMsg.textContent = '已取消合并。如果您忘记了密码，请联系班委重置。';
                 authMsg.className = 'auth-msg error';
                 return;
               }
 
-              // 用原密码验证
+              // 用原密码验证，验证通过则直接登录
               const { data: oldPwdData, error: oldPwdError } = await db.auth.signInWithPassword({
                 email: gitUser.email,
                 password: originalPwd
               });
 
               if (oldPwdData && oldPwdData.session) {
-                // 原密码正确！登录成功。
-                // 此时用户的原密码依然有效，且他通过清华登录也进来了。
-                authMsg.textContent = '账号合并成功，正在进入系统...';
+                authMsg.textContent = '合并成功！您以后的清华快捷登录与原密码均可进入此账号。';
                 authMsg.className = 'auth-msg success';
-                window.location.href = 'index.html';
+                setTimeout(() => { window.location.href = 'index.html'; }, 1200);
               } else {
-                authMsg.textContent = '密码错误，合并取消。请使用普通密码登录。';
+                authMsg.textContent = '密码错误。您可以关闭弹窗使用密码登录，或联系管理员。';
                 authMsg.className = 'auth-msg error';
               }
               return;
             }
 
-            // 兜底错误
-            authMsg.textContent = '登录失败，请尝试使用密码登录。';
-            authMsg.className = 'auth-msg error';
+            // 兜底报错（如果既没 session 也没匹配上已注册）
+            if (signUpData?.user && !signUpData.session) {
+              authMsg.textContent = '账号创建成功，但 Supabase 开启了邮件验证。请让管理员在后台关闭 Confirm Email。';
+              authMsg.className = 'auth-msg error';
+            } else {
+              throw new Error(signUpError ? signUpError.message : '未知注册错误');
+            }
 
           } catch (err) {
-            authMsg.textContent = '系统异常：' + err.message;
+            authMsg.textContent = '系统提示：' + (err.message || err);
             authMsg.className = 'auth-msg error';
           }
         }
