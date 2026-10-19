@@ -1,4 +1,4 @@
-/* 通知中心 v4.0.0（带桌面系统通知） */
+/* 通知中心 v4.1.0（修复管理员端不显示 + 适配新通知） */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -13,7 +13,6 @@
     currentUser = e.detail;
     if (!currentUser.class_id) return;
     
-    // 首次进入时，尝试请求桌面通知权限
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
@@ -22,28 +21,32 @@
   });
 
   function initBell() {
-    injectBellButton();
-    updateBadge();
-    subscribeRealtime();
-    pollTimer = setInterval(updateBadge, 60000);
-  }
-
-  function injectBellButton() {
-    const userEl = document.getElementById('topbar-user');
-    if (!userEl) return;
-    if (document.getElementById('notif-bell')) return;
-
-    const bell = document.createElement('button');
-    bell.id = 'notif-bell';
-    bell.className = 'notif-bell';
-    bell.title = '通知';
-    bell.innerHTML = '🔔<span class="notif-badge" id="notif-badge" style="display:none;">0</span>';
-    bell.addEventListener('click', (e) => {
-      e.stopPropagation();
-      location.href = 'notifications.html';
-    });
-
-    userEl.insertBefore(bell, userEl.firstChild);
+    // 👇 核心修复：使用重试机制，确保在顶栏渲染完成后再插入铃铛
+    let retries = 0;
+    const tryInject = () => {
+      const userEl = document.getElementById('topbar-user');
+      if (userEl && !document.getElementById('notif-bell')) {
+        const bell = document.createElement('button');
+        bell.id = 'notif-bell';
+        bell.className = 'notif-bell';
+        bell.title = '通知中心';
+        bell.innerHTML = '🔔<span class="notif-badge" id="notif-badge" style="display:none;">0</span>';
+        bell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          location.href = 'notifications.html';
+        });
+        userEl.insertBefore(bell, userEl.firstChild);
+        
+        updateBadge();
+        subscribeRealtime();
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(updateBadge, 60000);
+      } else if (retries < 20) {
+        retries++;
+        setTimeout(tryInject, 100);
+      }
+    };
+    tryInject();
   }
 
   async function updateBadge(showDesktopNotif = false) {
@@ -64,21 +67,18 @@
       }
     }
 
-    // 👇 如果收到了实时新消息，且页面被切到后台了，弹出系统通知
     if (showDesktopNotif && 'Notification' in window && Notification.permission === 'granted') {
       if (document.hidden) {
         try {
-          // 优先通过 Service Worker 发送（兼容手机端）
           const reg = await navigator.serviceWorker.ready;
           reg.showNotification('THU-XY 班级共建', {
-            body: '你收到了一条新的班级消息，点击查看！',
+            body: '你收到了一条新的消息，点击查看！',
             icon: '/thu-xy/icon-192.png',
             badge: '/thu-xy/icon-192.png',
             vibrate: [200, 100, 200]
           });
         } catch (e) {
-          // 降级到普通浏览器通知
-          new Notification('THU-XY 班级共建', { body: '你收到了一条新的班级消息，点击查看！' });
+          new Notification('THU-XY 班级共建', { body: '你收到了一条新的消息，点击查看！' });
         }
       }
     }
@@ -92,7 +92,7 @@
       .channel('notifications-' + currentUser.id)
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` },
-        () => { updateBadge(true); }) // 收到新通知，传 true
+        () => { updateBadge(true); })
       .subscribe();
   }
 
