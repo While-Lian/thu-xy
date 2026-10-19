@@ -28,7 +28,7 @@
       <div id="login-view">
         <h2 class="login-title">登 录</h2>
         
-        <button type="button" id="tsinghua-git-login" class="btn-git-login">
+        <button type="button" class="btn-git-login">
           <span style="font-size:18px;">🎓</span> 使用清华 Git 身份登录
         </button>
 
@@ -42,6 +42,28 @@
         <div class="login-options">
           <a href="#" id="forgot-link">忘记密码？</a>
           <a href="#" id="to-register">立即注册！</a>
+        </div>
+      </div>
+
+      <!-- 注册 -->
+      <div id="register-view" style="display:none;">
+        <h2 class="login-title">注 册</h2>
+        
+        <button type="button" class="btn-git-login">
+          <span style="font-size:18px;">🎓</span> 使用清华 Git 身份一键创建账号
+        </button>
+
+        <div class="divider-text">或手动填写信息注册</div>
+
+        <form id="register-form">
+          <div class="input-wrap"><span class="input-icon">✉️</span><input type="email" id="reg-email" placeholder="邮箱" required /></div>
+          <div class="input-wrap"><span class="input-icon">🔒</span><input type="password" id="reg-password" placeholder="密码（至少 6 位）" required minlength="6" /></div>
+          <div class="input-wrap"><span class="input-icon">👤</span><input type="text" id="reg-nickname" placeholder="昵称（同学看到的名字）" required maxlength="20" /></div>
+          <div class="input-wrap"><span class="input-icon">🔑</span><input type="text" id="reg-invite-code" placeholder="邀请码（老师/辅导员填，同学留空）" /></div>
+          <button type="submit" class="btn-login">注 册</button>
+        </form>
+        <div class="login-options">
+          <a href="#" id="to-login">已有账号？返回登录</a>
         </div>
       </div>
 
@@ -64,18 +86,7 @@
         </div>
       </div>
 
-      <div id="register-view" style="display:none;">
-        <h2 class="login-title">注 册</h2>
-        <form id="register-form">
-          <div class="input-wrap"><span class="input-icon">✉️</span><input type="email" id="reg-email" placeholder="邮箱" required /></div>
-          <div class="input-wrap"><span class="input-icon">🔒</span><input type="password" id="reg-password" placeholder="密码（至少 6 位）" required minlength="6" /></div>
-          <div class="input-wrap"><span class="input-icon">👤</span><input type="text" id="reg-nickname" placeholder="昵称（同学看到的名字）" required maxlength="20" /></div>
-          <div class="input-wrap"><span class="input-icon">🔑</span><input type="text" id="reg-invite-code" placeholder="邀请码（老师/辅导员填，同学留空）" /></div>
-          <button type="submit" class="btn-login">注 册</button>
-        </form>
-        <div class="login-options"><a href="#" id="to-login">已有账号？返回登录</a></div>
-      </div>
-
+      <!-- 忘记密码 -->
       <div id="forgot-view" style="display:none;">
         <h2 class="login-title">忘记密码</h2>
         <p style="color:#666;font-size:14px;line-height:1.8;text-align:center;margin:16px 0 24px;">
@@ -96,17 +107,17 @@
 
   <script>
     (function() {
-      const GIT_CLIENT_ID = 'f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea'; // ⚠️ 替换为真实 ID
+      // 👇 已经填入你提供的真实 Client ID
+      const GIT_CLIENT_ID = 'f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea'; 
       const REDIRECT_URI = 'https://while-lian.github.io/thu-xy/oauth-callback.html'; 
       
       const db = window.supabaseClient;
       const authMsg = document.getElementById('auth-msg');
-      const gitBtn = document.getElementById('tsinghua-git-login');
       
       const views = {
         login: document.getElementById('login-view'),
-        merge: document.getElementById('merge-view'),
         register: document.getElementById('register-view'),
+        merge: document.getElementById('merge-view'),
         forgot: document.getElementById('forgot-view')
       };
 
@@ -122,43 +133,48 @@
         showView('login');
       });
 
-      // 恢复按钮状态的统一函数
-      function resetGitBtn() {
-        gitBtn.disabled = false;
-        gitBtn.innerHTML = '<span style="font-size:18px;">🎓</span> 使用清华 Git 身份登录';
-      }
+      // 1. 绑定所有清华登录按钮（登录页 + 注册页）
+      const gitBtns = document.querySelectorAll('.btn-git-login');
+      gitBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            gitBtns.forEach(b => {
+              b.disabled = true;
+              b.dataset.originalText = b.innerHTML;
+              b.innerHTML = '<span style="font-size:18px;">⏳</span> 正在连接...';
+            });
+            
+            const codeVerifier = generateRandomString(64);
+            const codeChallenge = await sha256(codeVerifier);
+            const state = generateRandomString(16);
 
-      // 1. 点击清华认证
-      gitBtn.addEventListener('click', async () => {
-        try {
-          gitBtn.disabled = true;
-          gitBtn.innerHTML = '<span style="font-size:18px;">⏳</span> 正在连接...';
-          
-          const codeVerifier = generateRandomString(64);
-          const codeChallenge = await sha256(codeVerifier);
-          const state = generateRandomString(16);
+            sessionStorage.setItem('oauth_code_verifier', codeVerifier);
+            sessionStorage.setItem('oauth_state', state);
 
-          sessionStorage.setItem('oauth_code_verifier', codeVerifier);
-          sessionStorage.setItem('oauth_state', state);
+            const authUrl = new URL('https://git.tsinghua.edu.cn/oauth/authorize');
+            authUrl.searchParams.set('client_id', GIT_CLIENT_ID);
+            authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+            authUrl.searchParams.set('response_type', 'code');
+            authUrl.searchParams.set('scope', 'read_user');
+            authUrl.searchParams.set('state', state);
+            authUrl.searchParams.set('code_challenge', codeChallenge);
+            authUrl.searchParams.set('code_challenge_method', 'S256');
 
-          const authUrl = new URL('https://git.tsinghua.edu.cn/oauth/authorize');
-          authUrl.searchParams.set('client_id', GIT_CLIENT_ID);
-          authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
-          authUrl.searchParams.set('response_type', 'code');
-          authUrl.searchParams.set('scope', 'read_user');
-          authUrl.searchParams.set('state', state);
-          authUrl.searchParams.set('code_challenge', codeChallenge);
-          authUrl.searchParams.set('code_challenge_method', 'S256');
-
-          window.open(authUrl.toString(), 'THU_AUTH', 'width=600,height=700');
-          
-          resetGitBtn();
-        } catch (err) {
-          authMsg.textContent = '发起认证失败：' + err.message;
-          authMsg.className = 'auth-msg error';
-          // 👇 修复：这里以前漏了恢复按钮，现在加上了
-          resetGitBtn();
-        }
+            window.open(authUrl.toString(), 'THU_AUTH', 'width=600,height=700');
+            
+            gitBtns.forEach(b => {
+              b.disabled = false;
+              b.innerHTML = b.dataset.originalText;
+            });
+          } catch (err) {
+            authMsg.textContent = '发起认证失败：' + err.message;
+            authMsg.className = 'auth-msg error';
+            gitBtns.forEach(b => {
+              b.disabled = false;
+              b.innerHTML = b.dataset.originalText;
+            });
+          }
+        });
       });
 
       // 2. 监听回调
@@ -170,13 +186,13 @@
 
           currentGitEmail = gitUser.email;
           document.getElementById('login-email').value = gitUser.email;
-          authMsg.textContent = '清华身份验证成功，正在登录...';
+          authMsg.textContent = '清华身份验证成功，正在校验...';
           authMsg.className = 'auth-msg';
 
           const internalPassword = `THU_XY_GIT_${gitUser.id}_SECURE_2026`;
 
           try {
-            // 1. 尝试内部密码登录（针对之前用清华登录过的用户）
+            // 1. 尝试内部密码登录
             let { data: signInData } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
@@ -189,7 +205,7 @@
               return;
             }
 
-            // 2. 检查本地缓存是否有原密码（完美免密通道）
+            // 2. 本地缓存免密
             const savedPwd = localStorage.getItem('thu_xy_pwd_' + gitUser.email);
             if (savedPwd) {
               let { data: cachedData } = await db.auth.signInWithPassword({
@@ -204,7 +220,7 @@
               }
             }
 
-            // 3. 尝试注册（针对全新用户）
+            // 3. 尝试注册
             const { data: signUpData, error: signUpError } = await db.auth.signUp({
               email: gitUser.email,
               password: internalPassword,
@@ -218,7 +234,7 @@
               return;
             }
 
-            // 4. 检测到已存在 -> 切换到合并授权视图
+            // 4. 老用户合并授权
             const errorMsg = signUpError ? signUpError.message.toLowerCase() : '';
             const isAlreadyExist = errorMsg.includes('already') || errorMsg.includes('已注册') || (signUpData?.user && signUpData.user.identities && signUpData.user.identities.length === 0);
 
@@ -245,7 +261,7 @@
         }
       });
 
-      // 5. 合并视图提交验证
+      // 3. 合并视图提交验证
       document.getElementById('merge-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const originalPwd = document.getElementById('merge-password').value;
@@ -260,9 +276,7 @@
         });
 
         if (oldPwdData && oldPwdData.session) {
-          // 将原密码存入本地，下次直接免密
           localStorage.setItem('thu_xy_pwd_' + currentGitEmail, originalPwd);
-          
           authMsg.textContent = '合并成功！原密码依然有效，下次清华登录将直接免密通过。';
           authMsg.className = 'auth-msg success';
           setTimeout(() => { window.location.href = 'index.html'; }, 1500);
