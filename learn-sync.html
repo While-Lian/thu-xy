@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>同步网络学堂 DDL</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .sync-step { margin-bottom: 24px; padding: 20px; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); }
+    .sync-step h3 { color: var(--primary); margin-top: 0; font-size: 18px; }
+    .bookmarklet-btn { display: inline-block; padding: 12px 24px; background: var(--primary); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: grab; box-shadow: 0 4px 12px rgba(102,8,116,0.3); text-align: center; }
+    .bookmarklet-btn:active { cursor: grabbing; }
+    .copy-btn { display: inline-block; padding: 12px 24px; background: #2b579a; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(43,87,154,0.3); text-align: center; width: 100%; box-sizing: border-box; }
+    .copy-btn:active { background: #1e3f73; }
+    .code-box { background: #f5f5f5; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; word-break: break-all; margin-top: 10px; max-height: 100px; overflow-y: auto; color: #666; }
+    
+    .step-guide { background: var(--primary-lighter); padding: 16px; border-radius: 8px; font-size: 14px; line-height: 1.8; margin-bottom: 20px; }
+    .step-guide b { color: var(--primary); }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+    .badge-pc { background: #e3f2fd; color: #1565c0; }
+    .badge-mobile { background: #e8f5e9; color: #2e7d32; }
+    
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 9999; }
+  </style>
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>📚 同步网络学堂 DDL</h1>
+      <p class="page-desc">请选择你的设备类型，按照对应教程操作</p>
+    </header>
+
+    <!-- 电脑端教程 -->
+    <div class="sync-step">
+      <span class="badge badge-pc">💻 电脑端用户</span>
+      <h3>1. 安装“同步书签”</h3>
+      <p>将下面的紫色按钮 <b>拖拽</b> 到你的浏览器书签栏（收藏夹栏）。</p>
+      <a id="bookmarklet-link" class="bookmarklet-btn" href="#">📥 拖拽我安装书签</a>
+      
+      <h3 style="margin-top: 24px;">2. 去网络学堂执行</h3>
+      <div class="step-guide">
+        1. 打开 <a href="https://learn.tsinghua.edu.cn" target="_blank">清华大学网络学堂</a>。<br>
+        2. 停留在 <b>“全部课程内容”总览页</b>。<br>
+        3. 点击你刚才拖拽保存的书签，看着进度条跑完即可。
+      </div>
+    </div>
+
+    <!-- 手机端教程 -->
+    <div class="sync-step" style="border: 2px solid #2b579a;">
+      <span class="badge badge-mobile">📱 手机端用户</span>
+      <h3>1. 复制同步代码</h3>
+      <p>点击下方按钮，一键复制魔法代码：</p>
+      <button id="copy-code-btn" class="copy-btn">📋 复制同步代码</button>
+      
+      <h3 style="margin-top: 24px;">2. 去网络学堂执行</h3>
+      <div class="step-guide">
+        1. 手机打开浏览器（推荐 Safari / Chrome，避免用微信内置浏览器）。<br>
+        2. 访问 <a href="https://learn.tsinghua.edu.cn" target="_blank">清华大学网络学堂</a> 并登录。<br>
+        3. 停留在 <b>“全部课程内容”总览页</b>。<br>
+        4. 点击浏览器顶部的 <b>地址栏</b>，粘贴刚才复制的代码。<br>
+        5. 点击输入法键盘上的 <b>“前往”</b> 或 <b>“回车”</b>，看着进度条跑完即可。
+      </div>
+      <p style="font-size: 12px; color: #e53935; margin-top: 10px;">
+        ⚠️ 注意：部分手机浏览器（如 Chrome）粘贴以 "javascript:" 开头的代码时会自动吞掉这几个字母。如果没反应，请手动在地址栏输入 `java`，然后粘贴剩下的部分。
+      </p>
+    </div>
+
+    <!-- 开发者预览 -->
+    <div style="text-align: center; margin-top: 20px;">
+      <a href="javascript:void(0)" id="toggle-code" style="font-size: 12px; color: #999; text-decoration: underline;">查看书签代码预览</a>
+    </div>
+    <div id="bookmarklet-code" class="code-box" style="display: none;"></div>
+  </main>
+
+  <footer class="site-footer"><p>THU-XY · 网络学堂同步</p></footer>
+  
+  <div id="toast" class="toast">✅ 代码已复制！</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    (function() {
+      window.addEventListener('user-ready', async (e) => {
+        const user = e.detail;
+        
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const accessToken = session?.access_token || '';
+        const refreshToken = session?.refresh_token || '';
+
+        // ================= 核心书签代码开始 =================
+        const rawJsCode = `
+          (async function() {
+            if (!location.hostname.includes('learn.tsinghua.edu.cn')) {
+              return alert('请先访问网络学堂页面！');
+            }
+
+            // 1. 清理可能存在的旧弹窗
+            const oldUI = document.getElementById('thu-xy-sync-overlay');
+            if (oldUI) oldUI.remove();
+
+            // 2. 注入炫酷的进度条 UI
+            const overlay = document.createElement('div');
+            overlay.id = 'thu-xy-sync-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);z-index:999999;display:flex;justify-content:center;align-items:center;';
+            
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff;width:320px;padding:24px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);text-align:center;font-family:sans-serif;';
+            card.innerHTML = \`
+              <h3 style="margin:0 0 16px;color:#660874;font-size:18px;">正在全量扫描网络学堂</h3>
+              <div style="font-size:14px;color:#666;margin-bottom:8px;" id="thu-xy-status-text">准备中...</div>
+              <div style="height:10px;background:#eee;border-radius:5px;overflow:hidden;margin-bottom:8px;">
+                <div id="thu-xy-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg, #a13fb3, #660874);transition:width 0.3s ease;border-radius:5px;"></div>
+              </div>
+              <div style="font-size:12px;color:#999;" id="thu-xy-progress-text">0 / 0</div>
+              <div style="font-size:12px;color:#999;margin-top:16px;">⚠️ 请勿关闭页面或点击其他地方</div>
+            \`;
+            overlay.appendChild(card);
+            document.body.appendChild(overlay);
+
+            const statusText = document.getElementById('thu-xy-status-text');
+            const progressBar = document.getElementById('thu-xy-progress-bar');
+            const progressText = document.getElementById('thu-xy-progress-text');
+
+            try {
+              if (!window.supabase) {
+                await new Promise((resolve, reject) => {
+                  const s = document.createElement('script');
+                  s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+                  s.onload = resolve;
+                  s.onerror = reject;
+                  document.head.appendChild(s);
+                });
+              }
+
+              const supabaseUrl = '${SUPABASE_URL}';
+              const supabaseKey = '${SUPABASE_KEY}';
+              const db = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+              if ('${accessToken}' && '${refreshToken}') {
+                await db.auth.setSession({
+                  access_token: '${accessToken}',
+                  refresh_token: '${refreshToken}'
+                });
+              }
+
+              const courseLinks = [];
+              document.querySelectorAll('a').forEach(a => {
+                const href = a.href;
+                if (href && href.includes('course?wlkcid=')) {
+                  if (!courseLinks.some(c => c.url === href)) {
+                    let cname = a.innerText.trim().split('\\n')[0].trim();
+                    if (cname.length > 15) cname = cname.slice(0, 15) + '...';
+                    if (!cname) cname = '未知课程';
+                    courseLinks.push({ url: href, name: cname });
+                  }
+                }
+              });
+
+              if (courseLinks.length === 0) {
+                overlay.remove();
+                return alert('未在当前页面找到课程链接，请确保在“全部课程内容”总览页。');
+              }
+
+              const uid = '${user.id}';
+              let totalHw = 0;
+              let successCount = 0;
+              let updateCount = 0;
+              let scannedCourses = 0;
+              const totalCourses = courseLinks.length;
+
+              for (let i = 0; i < totalCourses; i++) {
+                const course = courseLinks[i];
+                
+                // 更新 UI 进度
+                const percent = Math.round((i / totalCourses) * 100);
+                progressBar.style.width = percent + '%';
+                progressText.innerText = i + ' / ' + totalCourses;
+                statusText.innerText = '正在扫描：' + course.name;
+
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = course.url;
+                document.body.appendChild(iframe);
+
+                await new Promise(resolve => {
+                  iframe.onload = () => setTimeout(resolve, 1500);
+                  setTimeout(resolve, 3000);
+                });
+
+                try {
+                  const doc = iframe.contentWindow.document;
+                  const pageText = doc.body.innerText;
+                  const lines = pageText.split('\\n');
+                  
+                  for (let j = 0; j < lines.length; j++) {
+                    const line = lines[j].trim();
+                    const timeMatch = line.match(/(20\\d{2}-\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2})/);
+                    
+                    if (timeMatch && line.includes('截止')) {
+                      const dateStr = timeMatch[1];
+                      const timeStr = timeMatch[2];
+                      
+                      if (line.includes('已提交') || line.includes('已批改')) continue;
+
+                      let hwTitle = '未命名作业';
+                      if (j > 0 && lines[j-1].trim().length > 0 && lines[j-1].trim().length < 30) {
+                        hwTitle = lines[j-1].trim();
+                      } else {
+                        hwTitle = line.split('个人')[0].trim() || line.split(timeMatch[0])[0].trim();
+                      }
+                      hwTitle = hwTitle.replace(/^[>\\s\\-]+/, '').replace(/[<\\s\\-]+$/, '');
+                      if (!hwTitle) hwTitle = '网络学堂作业';
+
+                      totalHw++;
+                      const extId = \`\${dateStr}_\${hwTitle}\`;
+                      const finalTitle = \`[\${course.name}] \${hwTitle}\`;
+
+                      const { data: existing } = await db.from('personal_events')
+                        .select('id')
+                        .eq('user_id', uid)
+                        .eq('external_source', 'learn.tsinghua')
+                        .eq('external_id', extId)
+                        .single();
+
+                      if (existing) {
+                        await db.from('personal_events').update({
+                          title: finalTitle,
+                          remark: \`来自 \${course.name}\`
+                        }).eq('id', existing.id);
+                        updateCount++;
+                      } else {
+                        const { error } = await db.from('personal_events').insert({
+                          user_id: uid,
+                          title: finalTitle, 
+                          event_date: dateStr,
+                          event_time: timeStr,
+                          type: 'ddl',
+                          remark: \`来自 \${course.name}\`,
+                          external_source: 'learn.tsinghua',
+                          external_id: extId
+                        });
+                        if (!error) successCount++;
+                      }
+                    }
+                  }
+                  scannedCourses++;
+                } catch (err) {}
+                document.body.removeChild(iframe);
+              }
+
+              // 完成状态 UI
+              progressBar.style.width = '100%';
+              progressBar.style.background = '#27ae60'; // 变绿
+              progressText.innerText = totalCourses + ' / ' + totalCourses;
+              statusText.innerHTML = \`<span style="color:#27ae60;font-weight:bold;">✅ 扫描完成！</span>\`;
+              
+              card.innerHTML += \`
+                <div style="margin-top:20px;font-size:14px;color:#333;line-height:1.6;background:#f5f5f5;padding:12px;border-radius:8px;text-align:left;">
+                  共扫描 <b>\${scannedCourses}</b> 门课程。<br>
+                  新发现 <b>\${successCount}</b> 个，更新旧数据 <b>\${updateCount}</b> 个。
+                </div>
+                <button id="thu-xy-close-btn" style="margin-top:16px;width:100%;padding:10px;background:#660874;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">知道了</button>
+              \`;
+
+              document.getElementById('thu-xy-close-btn').addEventListener('click', () => overlay.remove());
+
+            } catch (err) {
+              statusText.innerHTML = \`<span style="color:#e53935;">❌ 同步失败</span>\`;
+              card.innerHTML += \`<div style="color:#e53935;font-size:12px;margin-top:10px;">\${err.message}</div>\`;
+              card.innerHTML += \`<button id="thu-xy-close-btn" style="margin-top:16px;width:100%;padding:10px;background:#ccc;color:#fff;border:none;border-radius:8px;">关闭</button>\`;
+              document.getElementById('thu-xy-close-btn').addEventListener('click', () => overlay.remove());
+            }
+          })();
+        `;
+        // ================= 核心书签代码结束 =================
+
+        // 1. 设置 PC 端拖拽书签的链接
+        const bookmarkletUrl = 'javascript:' + encodeURIComponent(rawJsCode);
+        document.getElementById('bookmarklet-link').href = bookmarkletUrl;
+        document.getElementById('bookmarklet-code').textContent = bookmarkletUrl;
+
+        // 2. 设置移动端的一键复制
+        const copyBtn = document.getElementById('copy-code-btn');
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(bookmarkletUrl);
+            showToast('✅ 代码已复制！请去网络学堂地址栏粘贴');
+          } catch (err) {
+            const textArea = document.createElement("textarea");
+            textArea.value = bookmarkletUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showToast('✅ 代码已复制！请去网络学堂地址栏粘贴');
+          }
+        });
+
+        function showToast(msg) {
+          const toast = document.getElementById('toast');
+          toast.textContent = msg;
+          toast.style.display = 'block';
+          setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        document.getElementById('toggle-code').addEventListener('click', () => {
+          const box = document.getElementById('bookmarklet-code');
+          box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

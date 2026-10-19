@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>正在验证身份...</title>
+</head>
+<body>
+  <p id="msg">正在验证您的清华身份，请稍候...</p>
+  <script>
+    (async function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+
+      // 校验 state，防止 CSRF 攻击
+      const savedState = sessionStorage.getItem('oauth_state');
+      if (!code || !state || state !== savedState) {
+        document.getElementById('msg').textContent = '验证失败：无效的请求。';
+        return;
+      }
+
+      // 从 sessionStorage 取回之前保存的 code_verifier
+      const codeVerifier = sessionStorage.getItem('oauth_code_verifier');
+      if (!codeVerifier) {
+        document.getElementById('msg').textContent = '验证失败：会话已过期，请重新登录。';
+        return;
+      }
+
+      // 用 code + code_verifier 换取 access_token
+      const tokenResponse = await fetch('https://git.tsinghua.edu.cn/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: 'f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea', // 替换成你的 ID
+          code: code,
+          code_verifier: codeVerifier,
+          grant_type: 'authorization_code',
+          redirect_uri: 'https://while-lian.github.io/thu-xy/oauth-callback.html'
+        })
+      });
+
+      const tokenData = await tokenResponse.json();
+      if (!tokenData.access_token) {
+        document.getElementById('msg').textContent = '验证失败：无法获取令牌。';
+        return;
+      }
+
+      // 用 access_token 获取用户信息
+      const userResponse = await fetch('https://git.tsinghua.edu.cn/api/v4/user', {
+        headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+      });
+
+      const userData = await userResponse.json();
+      
+      // 将用户信息通过 postMessage 发回主页面
+      if (window.opener) {
+        window.opener.postMessage({ 
+          type: 'TSINGHUA_GIT_AUTH', 
+          user: userData 
+        }, '*');
+      }
+
+      // 清理临时存储
+      sessionStorage.removeItem('oauth_state');
+      sessionStorage.removeItem('oauth_code_verifier');
+      
+      // 可以在这里关闭窗口，或跳转回登录页
+      window.close();
+    })();
+  </script>
+</body>
+</html>
