@@ -389,3 +389,25 @@ window.Topbar = {
     overlay.addEventListener('click', () => drawer.classList.remove('open'));
   }
 };
+
+
+
+
+
+// ==========================================
+// 👇 追加：检测清华合并登录，并强制提示修改密码
+// ==========================================
+window.addEventListener('user-ready', () => {
+  if (localStorage.getItem('thu_xy_merged_account') === '1') {
+    localStorage.removeItem('thu_xy_merged_account'); // 弹过一次就删掉
+    
+    setTimeout(() => {
+      const userWantsToChange = confirm(
+        "🔐 账号安全提示：\n\n系统检测到您刚刚使用了『清华快捷登录』。\n为了防止账号丢失，并允许您以后使用账号密码登录，强烈建议您现在前往『个人中心』设置一个专属密码。\n\n点击『确定』现在去修改，点击『取消』稍后再说。"
+      );
+      if (userWantsToChange) {
+        window.location.href = 'profile.html';
+      }
+    }, 1500); // 延迟1.5秒弹出，避免挡住页面加载
+  }
+});
