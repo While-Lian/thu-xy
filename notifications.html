@@ -23,8 +23,8 @@
     <section class="block">
       <div class="block-header">
         <div class="notif-tabs">
-          <button class="notif-tab active" data-tab="unread">未读</button>
-          <button class="notif-tab" data-tab="all">全部</button>
+          <button class="notif-tab active" data-tab="all">全部</button>
+          <button class="notif-tab" data-tab="unread">未读</button>
         </div>
         <div class="notif-actions">
           <button id="mark-all-read" class="btn btn-ghost btn-small">全部标为已读</button>
@@ -54,7 +54,7 @@
       const U = window.Utils;
       let currentUser = null;
       let allNotifs = [];
-      let activeTab = 'unread';
+      let activeTab = 'all'; // 👈 默认显示“全部”
 
       window.addEventListener('user-ready', (e) => {
         currentUser = e.detail;
@@ -62,6 +62,10 @@
       });
 
       function init() {
+        // 重置 Tab 状态
+        document.querySelectorAll('.notif-tab').forEach(b => b.classList.remove('active'));
+        document.querySelector('.notif-tab[data-tab="all"]').classList.add('active');
+
         document.querySelectorAll('.notif-tab').forEach(btn => {
           btn.addEventListener('click', () => {
             document.querySelectorAll('.notif-tab').forEach(b =>
@@ -109,6 +113,17 @@
         }
         allNotifs = data || [];
         render();
+
+        // 👇 核心：一进入页面加载完，立刻静默标记所有为已读，并刷新顶部铃铛
+        if (allNotifs.some(n => !n.is_read)) {
+          await window.NotificationsAPI.markAllRead();
+          // 将内存中的状态也改为已读，防止来回切 Tab 时出现问题
+          allNotifs.forEach(n => n.is_read = true);
+          // 通知顶栏刷新红点
+          if (window.NotificationsAPI.refresh) {
+            window.NotificationsAPI.refresh();
+          }
+        }
       }
 
       function render() {
@@ -168,11 +183,11 @@
           mention: '💬',
           private_message: '✉️',
           bulk_ddl: '📢',
-          new_announcement: '📣', // 新增：公告
-          new_chain: '🔗',        // 新增：接龙
-          new_poll: '📊',         // 新增：投票
-          new_homework: '📦',     // 新增：作业
-          forum_reply: '💬'       // 新增：论坛回复
+          new_announcement: '📣',
+          new_chain: '🔗',
+          new_poll: '📊',
+          new_homework: '📦',
+          forum_reply: '💬'
         }[type] || '🔔';
       }
     })();
