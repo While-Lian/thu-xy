@@ -96,11 +96,12 @@
 
   <script>
     (function() {
-      const GIT_CLIENT_ID = ''f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea''; // ⚠️ 替换为真实 ID
+      const GIT_CLIENT_ID = 'f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea'; // ⚠️ 替换为真实 ID
       const REDIRECT_URI = 'https://while-lian.github.io/thu-xy/oauth-callback.html'; 
       
       const db = window.supabaseClient;
       const authMsg = document.getElementById('auth-msg');
+      const gitBtn = document.getElementById('tsinghua-git-login');
       
       const views = {
         login: document.getElementById('login-view'),
@@ -121,10 +122,15 @@
         showView('login');
       });
 
+      // 恢复按钮状态的统一函数
+      function resetGitBtn() {
+        gitBtn.disabled = false;
+        gitBtn.innerHTML = '<span style="font-size:18px;">🎓</span> 使用清华 Git 身份登录';
+      }
+
       // 1. 点击清华认证
-      document.getElementById('tsinghua-git-login').addEventListener('click', async () => {
+      gitBtn.addEventListener('click', async () => {
         try {
-          const gitBtn = document.getElementById('tsinghua-git-login');
           gitBtn.disabled = true;
           gitBtn.innerHTML = '<span style="font-size:18px;">⏳</span> 正在连接...';
           
@@ -146,11 +152,12 @@
 
           window.open(authUrl.toString(), 'THU_AUTH', 'width=600,height=700');
           
-          gitBtn.disabled = false;
-          gitBtn.innerHTML = '<span style="font-size:18px;">🎓</span> 使用清华 Git 身份登录';
+          resetGitBtn();
         } catch (err) {
           authMsg.textContent = '发起认证失败：' + err.message;
           authMsg.className = 'auth-msg error';
+          // 👇 修复：这里以前漏了恢复按钮，现在加上了
+          resetGitBtn();
         }
       });
 
@@ -253,7 +260,7 @@
         });
 
         if (oldPwdData && oldPwdData.session) {
-          // 👇 核心魔法：将原密码存入本地，下次直接免密
+          // 将原密码存入本地，下次直接免密
           localStorage.setItem('thu_xy_pwd_' + currentGitEmail, originalPwd);
           
           authMsg.textContent = '合并成功！原密码依然有效，下次清华登录将直接免密通过。';
