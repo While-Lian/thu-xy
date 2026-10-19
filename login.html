@@ -56,14 +56,6 @@
         <div class="login-options"><a href="#" id="to-login">已有账号？返回登录</a></div>
       </div>
 
-      <div id="forgot-view" style="display:none;">
-        <h2 class="login-title">忘记密码</h2>
-        <p style="color:#666;font-size:14px;line-height:1.8;text-align:center;margin:16px 0 24px;">
-          请联系<b style="color:#660874;">班级管理员</b>协助重置密码。
-        </p>
-        <div class="login-options" style="justify-content:center;"><a href="#" id="forgot-back">← 返回登录</a></div>
-      </div>
-
       <p id="auth-msg" class="auth-msg"></p>
     </div>
     <p class="login-footer">Developed by 陈炼 · 徐天泽</p>
@@ -125,12 +117,11 @@
           authMsg.textContent = '清华身份验证成功，正在合并账号并登录...';
           authMsg.className = 'auth-msg';
 
-          // 生成内部快捷密码
           const internalPassword = `THU_XY_GIT_${gitUser.id}_SECURE_2026`;
 
           try {
-            // 1. 用内部快捷密码尝试直接登录（如果是曾经用清华登录过的老用户，直接成功）
-            let { data: signInData, error: signInError } = await db.auth.signInWithPassword({
+            // 1. 先试直接登
+            let { data: signInData } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
             });
@@ -142,30 +133,24 @@
               return;
             }
 
-            // 2. 如果密码不对（说明他曾经用别的密码注册过），尝试注册
-            const { data: signUpData, error: signUpError } = await db.auth.signUp({
+            // 2. 不行就注册
+            await db.auth.signUp({
               email: gitUser.email,
               password: internalPassword,
               options: { data: { nickname: gitUser.name || gitUser.username || '同学' } }
             });
 
-            // 3. 【核心合并逻辑】如果注册报“已存在”，或者依然拿不到 Session，说明是已有账号。
-            // 此时，调用我们写好的 RPC，强制把该邮箱的密码重置为内部快捷密码（为了实现无缝合并）
-            if (signUpError && signUpError.message.includes('already registered')) {
-                // 调用底层强行重置函数
-                await db.rpc('force_login_user', { 
-                  p_email: gitUser.email, 
-                  p_password: internalPassword 
-                });
-            } else if (!signUpData.session) {
-                // 新注册成功但没给 Session（因为后台 Confim Email 没关死）
-                await db.rpc('force_login_user', { 
-                  p_email: gitUser.email, 
-                  p_password: internalPassword 
-                });
+            // 3. 强攻合并（重置密码）
+            const { error: rpcError } = await db.rpc('force_login_user', { 
+              p_email: gitUser.email, 
+              p_password: internalPassword 
+            });
+            
+            if (rpcError) {
+               throw new Error("底层重置失败: " + rpcError.message);
             }
 
-            // 4. 既然密码已经在底层被强行重置为内部快捷密码，现在绝对能登进去了
+            // 4. 再次重试登录
             const { data: retryData, error: retryError } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
@@ -174,17 +159,15 @@
             if (retryData && retryData.session) {
               authMsg.textContent = '账号合并成功，正在进入系统...';
               authMsg.className = 'auth-msg success';
-              
-              // 存入 localStorage，用于提示用户去修改密码
               localStorage.setItem('thu_xy_merged_account', '1');
-              
               window.location.href = 'index.html';
             } else {
-              throw new Error('自动合并失败，请稍后重试。');
+              // 如果还是失败，打印具体错误
+              throw new Error(retryError ? retryError.message : '未知原因导致无法登录');
             }
 
           } catch (err) {
-            authMsg.textContent = '登录失败：' + err.message;
+            authMsg.textContent = '合并失败: ' + err.message;
             authMsg.className = 'auth-msg error';
           }
         }
