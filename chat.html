@@ -236,11 +236,23 @@
         input.value = '';
         input.disabled = true;
 
+        // 1. 插入私信内容
         const { error } = await db.from('messages').insert({
           sender_id: currentUser.id,
           receiver_id: currentTarget.id,
           content: content
         });
+
+        // 2. 给对方发送通知
+        if (!error) {
+          await db.from('notifications').insert({
+            user_id: currentTarget.id,
+            type: 'private_message',
+            title: '💬 收到新私信',
+            body: `${currentUser.nickname}：${content.slice(0, 30)}...`,
+            link: 'chat.html'
+          });
+        }
 
         input.disabled = false;
         input.focus();
