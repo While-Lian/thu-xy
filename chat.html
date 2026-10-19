@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>同年级交流 · THU-XY</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .chat-container { display: flex; gap: 20px; height: calc(100vh - 180px); min-height: 500px; }
+    .chat-sidebar { width: 300px; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); display: flex; flex-direction: column; }
+    .chat-main { flex: 1; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); display: flex; flex-direction: column; }
+    
+    .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--primary); }
+    .user-list { flex: 1; overflow-y: auto; padding: 8px; }
+    
+    .user-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+    .user-item:hover { background: var(--primary-lighter); }
+    .user-item.active { background: var(--primary-light); }
+    
+    .avatar-wrap { position: relative; }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .status-dot { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; }
+    .status-online { background: #27ae60; }
+    .status-offline { background: #ccc; }
+    
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .user-time { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+    
+    .chat-header { padding: 16px; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text); }
+    .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
+    
+    .msg-bubble { max-width: 70%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+    .msg-mine { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 2px; }
+    .msg-theirs { align-self: flex-start; background: var(--white); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+    
+    .chat-input-area { padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: var(--white); border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); }
+    .chat-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-family: inherit; resize: none; }
+    .chat-input:focus { border-color: var(--primary); }
+    
+    .empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 14px; }
+    
+    @media (max-width: 768px) {
+      .chat-container { flex-direction: column; height: auto; }
+      .chat-sidebar { width: 100%; height: 300px; }
+      .chat-main { height: 500px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header">
+      <h1>💬 年级交流</h1>
+      <p class="page-desc">与同年级的同学私聊，查看在线状态</p>
+    </header>
+
+    <div class="chat-container">
+      <div class="chat-sidebar">
+        <div class="sidebar-header">同年级同学</div>
+        <div class="user-list" id="user-list">
+          <div class="empty-state">加载中…</div>
+        </div>
+      </div>
+
+      <div class="chat-main">
+        <div id="chat-header" class="chat-header" style="display: none;">请选择聊天对象</div>
+        <div id="chat-messages" class="chat-messages" style="display: none;"></div>
+        <div class="empty-state" id="chat-empty">从左侧选择一位同学开始聊天</div>
+        <div class="chat-input-area" id="chat-input-area" style="display: none;">
+          <textarea id="msg-input" class="chat-input" rows="1" placeholder="输入消息，按 Enter 发送..."></textarea>
+          <button id="send-btn" class="btn btn-primary" style="padding: 0 20px;">发送</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer"><p>THU-XY · 年级交流</p></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+
+  <script>
+    (function() {
+      let currentUser = null;
+      let currentTarget = null;
+      let messageChannel = null;
+
+      window.addEventListener('user-ready', async (e) => {
+        currentUser = e.detail;
+        if (!currentUser.grade) {
+          document.getElementById('user-list').innerHTML = '<div class="empty-state">你尚未绑定年级信息，无法查看年级同学。</div>';
+          return;
+        }
+        loadUsers();
+      });
+
+      const db = window.supabaseClient;
+      const U = window.Utils;
+
+      function formatLastSeen(iso) {
+        if (!iso) return '离线';
+        const diff = Date.now() - new Date(iso).getTime();
+        if (diff < 120000) return '在线';
+        const mins = Math.floor(diff / 60000);
+        if (mins < 60) return `${mins}分钟前在线`;
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return `${hours}小时前在线`;
+        return U.formatTime(iso);
+      }
+
+      async function loadUsers() {
+        const listEl = document.getElementById('user-list');
+        const { data, error } = await db.from('profiles')
+          .select('id, nickname, avatar_url, role, last_seen')
+          .eq('grade', currentUser.grade)
+          .neq('id', currentUser.id)
+          .order('last_seen', { ascending: false });
+
+        if (error || !data) {
+          listEl.innerHTML = '<div class="empty-state">加载失败</div>';
+          return;
+        }
+
+        if (data.length === 0) {
+          listEl.innerHTML = '<div class="empty-state">暂无同年级同学</div>';
+          return;
+        }
+
+        listEl.innerHTML = data.map(u => {
+          const initial = (u.nickname || '?').charAt(0).toUpperCase();
+          const avatar = u.avatar_url ? `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : initial;
+          const lastSeenStr = formatLastSeen(u.last_seen);
+          const isOnline = lastSeenStr === '在线';
+          
+          return `
+            <div class="user-item" data-id="${u.id}" data-name="${U.escapeHtml(u.nickname)}">
+              <div class="avatar-wrap">
+                <div class="user-avatar">${avatar}</div>
+                <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
+              </div>
+              <div class="user-info">
+                <div class="user-name">${U.escapeHtml(u.nickname)}</div>
+                <div class="user-time">${lastSeenStr}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        listEl.querySelectorAll('.user-item').forEach(item => {
+          item.addEventListener('click', () => {
+            listEl.querySelectorAll('.user-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            openChat(item.dataset.id, item.dataset.name);
+          });
+        });
+      }
+
+      async function openChat(userId, userName) {
+        currentTarget = { id: userId, name: userName };
+        document.getElementById('chat-empty').style.display = 'none';
+        document.getElementById('chat-header').style.display = 'block';
+        document.getElementById('chat-header').textContent = `与 ${userName} 聊天中`;
+        document.getElementById('chat-messages').style.display = 'flex';
+        document.getElementById('chat-input-area').style.display = 'flex';
+
+        await loadMessages();
+
+        if (messageChannel) db.removeChannel(messageChannel);
+        messageChannel = db.channel('chat-' + userId)
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `sender_id=eq.${userId}`
+          }, (payload) => {
+            if (payload.new.receiver_id === currentUser.id) {
+              appendMessage(payload.new);
+            }
+          }).subscribe();
+      }
+
+      async function loadMessages() {
+        const msgBox = document.getElementById('chat-messages');
+        msgBox.innerHTML = '<div class="empty-state">加载中...</div>';
+        
+        const { data, error } = await db.from('messages')
+          .select('*')
+          .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentTarget.id}),and(sender_id.eq.${currentTarget.id},receiver_id.eq.${currentUser.id})`)
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          msgBox.innerHTML = '<div class="empty-state">加载失败</div>';
+          return;
+        }
+
+        msgBox.innerHTML = '';
+        if (data.length === 0) {
+          msgBox.innerHTML = '<div class="empty-state">暂无消息，打个招呼吧</div>';
+        } else {
+          data.forEach(appendMessage);
+        }
+        msgBox.scrollTop = msgBox.scrollHeight;
+      }
+
+      function appendMessage(msg) {
+        const msgBox = document.getElementById('chat-messages');
+        if (msgBox.querySelector('.empty-state')) msgBox.innerHTML = '';
+        
+        const isMine = msg.sender_id === currentUser.id;
+        const div = document.createElement('div');
+        div.className = `msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}`;
+        div.textContent = msg.content;
+        msgBox.appendChild(div);
+        msgBox.scrollTop = msgBox.scrollHeight;
+      }
+
+      document.getElementById('send-btn').addEventListener('click', sendMessage);
+      document.getElementById('msg-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      async function sendMessage() {
+        const input = document.getElementById('msg-input');
+        const content = input.value.trim();
+        if (!content || !currentTarget) return;
+
+        input.value = '';
+        input.disabled = true;
+
+        const { error } = await db.from('messages').insert({
+          sender_id: currentUser.id,
+          receiver_id: currentTarget.id,
+          content: content
+        });
+
+        input.disabled = false;
+        input.focus();
+
+        if (!error) {
+          appendMessage({ sender_id: currentUser.id, content: content });
+        } else {
+          alert('发送失败：' + error.message);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <!-- PWA 配置 -->
   <link rel="manifest" href="/thu-xy/manifest.json">
   <meta name="theme-color" content="#660874">
   <link rel="apple-touch-icon" href="/thu-xy/icon-192.png">
@@ -82,7 +81,11 @@
         </div>
       </div>
 
-      <button id="add-activity" class="btn btn-primary add-btn admin-only">＋ 添加活动</button>
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button id="add-activity" class="btn btn-primary add-btn admin-only" style="margin-top: 0;">＋ 添加活动</button>
+        <!-- 👇 新增的集体 DDL 按钮 -->
+        <button id="bulk-ddl-btn" class="btn btn-primary admin-only" style="margin-top: 0; background-color: #e53935; border-color: #e53935;">📢 发集体 DDL</button>
+      </div>
     </section>
   </main>
 
@@ -90,7 +93,6 @@
     <p>THU-XY · 班级事务</p>
   </footer>
 
-  <!-- 编辑弹窗 -->
   <div id="edit-modal" class="modal" style="display: none;">
     <div class="modal-box">
       <h3 id="modal-title">编辑活动</h3>
@@ -124,7 +126,6 @@
     </div>
   </div>
 
-  <!-- 名片弹窗 -->
   <div id="card-modal" class="modal" style="display:none;">
     <div class="modal-box" style="width: 320px; text-align: center; position: relative;">
       <button id="card-close" style="position:absolute; top:10px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#999;">×</button>
