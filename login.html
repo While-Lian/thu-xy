@@ -45,12 +45,12 @@
         </div>
       </div>
 
-      <!-- 👇 新增：针对老账号的合并验证表单 -->
+      <!-- 授权合并表单 -->
       <div id="merge-view" style="display:none;">
         <h2 class="login-title">授权合并</h2>
         <p style="color:#666;text-align:center;margin-bottom:16px;font-size:13px;line-height:1.5;">
           检测到清华邮箱 <b id="merge-email" style="color:var(--primary);"></b> 已绑定原账号。<br>
-          为了不影响您原有的登录方式，请输入原密码完成合并。
+          请输入一次原密码完成授权。以后使用清华登录将无需再输入密码。
         </p>
         <form id="merge-form">
           <div class="input-wrap">
@@ -96,7 +96,7 @@
 
   <script>
     (function() {
-      const GIT_CLIENT_ID = 'f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea'; // ⚠️ 替换为你的真实 ID
+      const GIT_CLIENT_ID = ''f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea''; // ⚠️ 替换为真实 ID
       const REDIRECT_URI = 'https://while-lian.github.io/thu-xy/oauth-callback.html'; 
       
       const db = window.supabaseClient;
@@ -116,7 +116,6 @@
         authMsg.textContent = '';
       }
 
-      // 切换视图事件
       document.getElementById('merge-cancel').addEventListener('click', (e) => {
         e.preventDefault();
         showView('login');
@@ -170,7 +169,7 @@
           const internalPassword = `THU_XY_GIT_${gitUser.id}_SECURE_2026`;
 
           try {
-            // 1. 尝试内部密码登录
+            // 1. 尝试内部密码登录（针对之前用清华登录过的用户）
             let { data: signInData } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
@@ -183,7 +182,22 @@
               return;
             }
 
-            // 2. 尝试注册
+            // 2. 检查本地缓存是否有原密码（完美免密通道）
+            const savedPwd = localStorage.getItem('thu_xy_pwd_' + gitUser.email);
+            if (savedPwd) {
+              let { data: cachedData } = await db.auth.signInWithPassword({
+                email: gitUser.email,
+                password: savedPwd
+              });
+              if (cachedData && cachedData.session) {
+                authMsg.textContent = '本地授权成功，正在进入系统...';
+                authMsg.className = 'auth-msg success';
+                window.location.href = 'index.html';
+                return;
+              }
+            }
+
+            // 3. 尝试注册（针对全新用户）
             const { data: signUpData, error: signUpError } = await db.auth.signUp({
               email: gitUser.email,
               password: internalPassword,
@@ -197,16 +211,15 @@
               return;
             }
 
-            // 3. 检测到已存在 -> 切换到合并授权视图
+            // 4. 检测到已存在 -> 切换到合并授权视图
             const errorMsg = signUpError ? signUpError.message.toLowerCase() : '';
             const isAlreadyExist = errorMsg.includes('already') || errorMsg.includes('已注册') || (signUpData?.user && signUpData.user.identities && signUpData.user.identities.length === 0);
 
             if (isAlreadyExist) {
-              // 👇 核心修改：无弹窗，直接展现内嵌表单
               document.getElementById('merge-email').textContent = gitUser.email;
               document.getElementById('merge-password').value = '';
               showView('merge');
-              authMsg.textContent = '需要验证原密码完成合并';
+              authMsg.textContent = '请输入一次原密码以进行永久本地免密授权';
               authMsg.className = 'auth-msg';
               return;
             }
@@ -225,7 +238,7 @@
         }
       });
 
-      // 3. 合并视图提交验证
+      // 5. 合并视图提交验证
       document.getElementById('merge-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const originalPwd = document.getElementById('merge-password').value;
@@ -240,9 +253,12 @@
         });
 
         if (oldPwdData && oldPwdData.session) {
-          authMsg.textContent = '合并成功！双通道已打通。';
+          // 👇 核心魔法：将原密码存入本地，下次直接免密
+          localStorage.setItem('thu_xy_pwd_' + currentGitEmail, originalPwd);
+          
+          authMsg.textContent = '合并成功！原密码依然有效，下次清华登录将直接免密通过。';
           authMsg.className = 'auth-msg success';
-          setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+          setTimeout(() => { window.location.href = 'index.html'; }, 1500);
         } else {
           authMsg.textContent = '密码错误，请重试或联系管理员。';
           authMsg.className = 'auth-msg error';
