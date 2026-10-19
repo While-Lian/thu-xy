@@ -34,8 +34,8 @@
         <div class="divider-text">或使用账号密码</div>
 
         <form id="login-form" autocomplete="on">
-          <div class="input-wrap"><span class="input-icon">👤</span><input type="email" id="login-email" placeholder="账户名 / 邮箱" required /></div>
-          <div class="input-wrap"><span class="input-icon">🔒</span><input type="password" id="login-password" placeholder="密码" required /></div>
+          <div class="input-wrap"><span class="input-icon">👤</span><input type="email" id="login-email" placeholder="账户名 / 邮箱" required autocomplete="username" /></div>
+          <div class="input-wrap"><span class="input-icon">🔒</span><input type="password" id="login-password" placeholder="密码" required autocomplete="current-password" /></div>
           <button type="submit" class="btn-login">登 录</button>
         </form>
         <div class="login-options">
@@ -56,6 +56,14 @@
         <div class="login-options"><a href="#" id="to-login">已有账号？返回登录</a></div>
       </div>
 
+      <div id="forgot-view" style="display:none;">
+        <h2 class="login-title">忘记密码</h2>
+        <p style="color:#666;font-size:14px;line-height:1.8;text-align:center;margin:16px 0 24px;">
+          请联系<b style="color:#660874;">班级管理员</b>协助重置密码。
+        </p>
+        <div class="login-options" style="justify-content:center;"><a href="#" id="forgot-back">← 返回登录</a></div>
+      </div>
+
       <p id="auth-msg" class="auth-msg"></p>
     </div>
     <p class="login-footer">Developed by 陈炼 · 徐天泽</p>
@@ -68,7 +76,7 @@
 
   <script>
     (function() {
-      const GIT_CLIENT_ID = 'f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea'; 
+      const GIT_CLIENT_ID = 'f6cb44834a83135bba8d8e67b94964a7d32c382699352caf34e13463e82c0dea'; // ⚠️ 替换为你的真实 ID
       const REDIRECT_URI = 'https://while-lian.github.io/thu-xy/oauth-callback.html'; 
       
       const db = window.supabaseClient;
@@ -114,60 +122,48 @@
           if (!gitUser.email) return authMsg.textContent = '认证成功，但未获取到清华邮箱。';
 
           loginEmailInput.value = gitUser.email;
-          authMsg.textContent = '清华身份验证成功，正在合并账号并登录...';
+          authMsg.textContent = '清华身份验证成功，正在登录...';
           authMsg.className = 'auth-msg';
 
           const internalPassword = `THU_XY_GIT_${gitUser.id}_SECURE_2026`;
 
           try {
-            // 1. 先试直接登
+            // 1. 尝试用内部密码直接登录（针对已经用过清华登录的用户）
             let { data: signInData } = await db.auth.signInWithPassword({
               email: gitUser.email,
               password: internalPassword
             });
 
             if (signInData && signInData.session) {
-              authMsg.textContent = '合并登录成功，正在进入系统...';
-              authMsg.className = 'auth-msg success';
               window.location.href = 'index.html';
               return;
             }
 
-            // 2. 不行就注册
-            await db.auth.signUp({
+            // 2. 尝试注册（针对从未注册过的新用户）
+            const { data: signUpData, error: signUpError } = await db.auth.signUp({
               email: gitUser.email,
               password: internalPassword,
               options: { data: { nickname: gitUser.name || gitUser.username || '同学' } }
             });
 
-            // 3. 强攻合并（重置密码）
-            const { error: rpcError } = await db.rpc('force_login_user', { 
-              p_email: gitUser.email, 
-              p_password: internalPassword 
-            });
-            
-            if (rpcError) {
-               throw new Error("底层重置失败: " + rpcError.message);
-            }
-
-            // 4. 再次重试登录
-            const { data: retryData, error: retryError } = await db.auth.signInWithPassword({
-              email: gitUser.email,
-              password: internalPassword
-            });
-
-            if (retryData && retryData.session) {
-              authMsg.textContent = '账号合并成功，正在进入系统...';
-              authMsg.className = 'auth-msg success';
-              localStorage.setItem('thu_xy_merged_account', '1');
+            if (signUpData && signUpData.session) {
               window.location.href = 'index.html';
-            } else {
-              // 如果还是失败，打印具体错误
-              throw new Error(retryError ? retryError.message : '未知原因导致无法登录');
+              return;
             }
+
+            // 3. 【核心修复】如果是老用户，绝不强改密码，温和提示！
+            if (signUpError && signUpError.message.includes('already registered')) {
+              authMsg.innerHTML = '该清华邮箱已注册过账号。<br>请使用你原本的【账号密码】登录。';
+              authMsg.className = 'auth-msg error';
+              return;
+            }
+
+            // 兜底：如果注册没报错也没给 session，通常是因为后台开启了邮箱验证
+            authMsg.textContent = '自动注册成功，但 Supabase 开启了邮箱验证，请联系管理员。';
+            authMsg.className = 'auth-msg error';
 
           } catch (err) {
-            authMsg.textContent = '合并失败: ' + err.message;
+            authMsg.textContent = '登录失败：' + err.message;
             authMsg.className = 'auth-msg error';
           }
         }
