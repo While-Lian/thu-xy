@@ -1,4 +1,4 @@
-/* 班级事务 v3.9.0（成员墙容错多班查询） */
+/* 班级事务 v3.9.0 */
 (function () {
   'use strict';
   const db = window.supabaseClient;
@@ -292,7 +292,6 @@
       });
     }
 
-    /* ============ 一键加入日程 ============ */
     function openAddScheduleModal(activity) {
       let defaultDate = new Date(SITE_CONFIG.semesterStart + 'T00:00:00');
       if (activity.weeks && activity.weeks.length > 0) {
@@ -318,28 +317,15 @@
       });
     }
 
-    /* ============ 头像墙 + 名片（容错处理） ============ */
-        /* ============ 头像墙 + 名片（容错处理） ============ */
     async function loadMemberWall() {
       const wall = document.getElementById('member-wall');
       if (!wall) return;
-      
+      try { wall.innerHTML = SK.members(8); } catch (e) {}
       try {
-        wall.innerHTML = SK.members(8);
-      } catch (e) {}
-
-      try {
-        // 👇 改用 RPC，彻底解决老师跨班不显示的漏洞
         const { data, error } = await db.rpc('list_class_members_public');
-
         if (error) throw error;
-        
         allMembers = data || [];
-        if (!allMembers.length) { 
-          wall.innerHTML = '<div class="member-wall-empty">暂无成员</div>'; 
-          return; 
-        }
-        
+        if (!allMembers.length) { wall.innerHTML = '<div class="member-wall-empty">暂无成员</div>'; return; }
         wall.innerHTML = allMembers.map(m => {
           const initial = (m.nickname || '?').charAt(0).toUpperCase();
           const roleTag = m.role !== 'student' ? `<span class="member-wall-role member-wall-role-${m.role}">${U.roleName(m.role)}</span>` : '';
@@ -359,7 +345,6 @@
           });
         });
       } catch (err) {
-        console.error('成员加载失败:', err);
         wall.innerHTML = `<div class="member-wall-empty" style="color:#e53935;">加载失败: ${U.escapeHtml(err.message || '网络异常')}</div>`; 
       }
     }
@@ -367,17 +352,13 @@
     function showMemberCard(m) {
       const cardModal = document.getElementById('card-modal');
       const avEl = document.getElementById('card-avatar');
-      if (m.avatar_url) {
-        avEl.innerHTML = `<img src="${m.avatar_url}" style="width:100%; height:100%; object-fit:cover;" />`;
-      } else {
-        avEl.innerHTML = U.escapeHtml((m.nickname||'?').charAt(0).toUpperCase());
-      }
+      if (m.avatar_url) avEl.innerHTML = `<img src="${m.avatar_url}" style="width:100%; height:100%; object-fit:cover;" />`;
+      else avEl.innerHTML = U.escapeHtml((m.nickname||'?').charAt(0).toUpperCase());
       
       document.getElementById('card-name').textContent = m.nickname;
       document.getElementById('card-role').textContent = U.roleName(m.role);
       document.getElementById('card-wechat').textContent = m.wechat || '未填写';
       document.getElementById('card-phone').textContent = m.phone || '未填写';
-      
       cardModal.style.display = 'flex';
     }
 
@@ -485,6 +466,41 @@
     });
 
     $('add-activity').addEventListener('click', () => openModal(null));
+
+    // 👇 核心修改：一键发集体 DDL 👇
+    const bulkDdlBtn = $('bulk-ddl-btn');
+    if (bulkDdlBtn) {
+      bulkDdlBtn.addEventListener('click', async () => {
+        const title = prompt('请输入集体 DDL 的标题（将展示给全班）：\n例如：[青年大学习] 第X期');
+        if (!title) return;
+
+        const dateStr = prompt('请输入截止日期（格式：YYYY-MM-DD）：\n例如：2026-10-25');
+        if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return alert('日期格式错误，操作取消。');
+
+        const timeStr = prompt('请输入截止时间（格式：HH:mm）：\n例如：23:59');
+        if (!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return alert('时间格式错误，操作取消。');
+
+        bulkDdlBtn.disabled = true;
+        bulkDdlBtn.textContent = '发布中...';
+
+        try {
+          const { error } = await db.rpc('assign_bulk_ddl', {
+            p_class_id: classIdGlobal,
+            p_title: title,
+            p_date: dateStr,
+            p_time: timeStr,
+            p_creator_id: currentUserGlobal.id
+          });
+          if (error) throw error;
+          alert('✅ 成功！已为全班同学添加该 DDL，他们可以在“个人管理”中查看。');
+        } catch (err) {
+          alert('发布失败：' + err.message);
+        } finally {
+          bulkDdlBtn.disabled = false;
+          bulkDdlBtn.textContent = '📢 发集体 DDL';
+        }
+      });
+    }
 
     loadMemberWall();
     Promise.all([loadActivities(), loadSignups()]).then(([loaded]) => {

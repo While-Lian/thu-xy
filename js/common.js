@@ -1,4 +1,4 @@
-/* 通用工具 & 顶栏 v5.2（收纳低频功能，解决顶栏重叠） */
+/* 通用工具 & 顶栏 v5.2 */
 (function() {
   const originalAddEventListener = window.addEventListener;
   window.addEventListener = function(type, listener, options) {
@@ -106,16 +106,15 @@ window.Topbar = {
       this.bindUserEvents(); this.bindThemeEvent(); this.renderBottomNav(); this.renderMobileDrawer(); return;
     }
 
-    // 👇 核心修改：精简主链接，把低频功能放进“班级工具”
     const mainLinks = [
       { href: 'class.html',      label: '班级事务', page: 'class.html' },
       { href: 'forum.html',      label: '班级论坛', page: 'forum.html' },
       { href: 'activities.html', label: '活动统计', page: 'activities.html' },
-      { href: 'files.html',      label: '班级文件', page: 'files.html' },
+      { href: 'chat.html',       label: '年级交流', page: 'chat.html' }, /* 👈 新增年级交流 */
       { href: 'personal.html',   label: '个人管理', page: 'personal.html' }
     ];
 
-    const toolPages = ['photos.html', 'homework.html', 'finances.html', 'feedback.html'];
+    const toolPages = ['photos.html', 'homework.html', 'finances.html', 'feedback.html', 'files.html'];
     const isToolPage = toolPages.includes(currentPage);
 
     let pendingCount = 0, managedClasses = [];
@@ -156,13 +155,13 @@ window.Topbar = {
       `;
     }
 
-    // 新增：班级工具菜单
     const toolsMenuHtml = `
       <div class="topbar-manage" id="topbar-tools" style="margin-right: 4px;">
         <button class="topbar-link topbar-tools-btn${isToolPage ? ' active' : ''}" type="button">
           🎒 班级工具 <span class="topbar-caret">▾</span>
         </button>
         <div class="topbar-dropdown topbar-manage-dropdown" id="topbar-tools-dropdown">
+          <a href="files.html">📁 班级文件</a>
           <a href="lottery.html">🎲 随机抽签</a>
           <a href="homework.html">📦 作业收集</a>
           <a href="finances.html">💰 班费账本</a>
@@ -192,9 +191,9 @@ window.Topbar = {
           <span class="topbar-brand-text">行健书院</span>
         </a>
         <nav class="topbar-nav">
-          ${mainLinks.slice(0, 4).map(l => `<a href="${l.href}" class="topbar-link${currentPage === l.page ? ' active' : ''}">${U.escapeHtml(l.label)}</a>`).join('')}
+          ${mainLinks.slice(0, 3).map(l => `<a href="${l.href}" class="topbar-link${currentPage === l.page ? ' active' : ''}">${U.escapeHtml(l.label)}</a>`).join('')}
           ${toolsMenuHtml}
-          ${mainLinks.slice(4).map(l => `<a href="${l.href}" class="topbar-link${currentPage === l.page ? ' active' : ''}">${U.escapeHtml(l.label)}</a>`).join('')}
+          ${mainLinks.slice(3).map(l => `<a href="${l.href}" class="topbar-link${currentPage === l.page ? ' active' : ''}">${U.escapeHtml(l.label)}</a>`).join('')}
         </nav>
         <div class="topbar-right">
           ${this.themeBtnHtml()}
@@ -313,7 +312,7 @@ window.Topbar = {
     if (!myActiveId) {
       nav.innerHTML = `<a href="classes.html" class="mbn-item${p === 'classes.html' ? ' active' : ''}"><span class="mbn-icon">🏫</span><span class="mbn-label">广场</span></a><a href="profile.html" class="mbn-item${p === 'profile.html' ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
     } else {
-      nav.innerHTML = `<a href="class.html" class="mbn-item${p === 'class.html' ? ' active' : ''}"><span class="mbn-icon">📅</span><span class="mbn-label">事务</span></a><a href="forum.html" class="mbn-item${p === 'forum.html' ? ' active' : ''}"><span class="mbn-icon">💬</span><span class="mbn-label">论坛</span></a><a href="activities.html" class="mbn-item${p === 'activities.html' ? ' active' : ''}"><span class="mbn-icon">📊</span><span class="mbn-label">活动</span></a><a href="profile.html" class="mbn-item${['profile.html', 'personal.html', 'files.html', 'photos.html', 'admin.html', 'requests.html', 'stats.html', 'finances.html', 'feedback.html', 'homework.html'].includes(p) ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
+      nav.innerHTML = `<a href="class.html" class="mbn-item${p === 'class.html' ? ' active' : ''}"><span class="mbn-icon">📅</span><span class="mbn-label">事务</span></a><a href="forum.html" class="mbn-item${p === 'forum.html' ? ' active' : ''}"><span class="mbn-icon">💬</span><span class="mbn-label">论坛</span></a><a href="chat.html" class="mbn-item${p === 'chat.html' ? ' active' : ''}"><span class="mbn-icon">🗣️</span><span class="mbn-label">交流</span></a><a href="profile.html" class="mbn-item${['profile.html', 'personal.html', 'files.html', 'photos.html', 'admin.html', 'requests.html', 'stats.html', 'finances.html', 'feedback.html', 'homework.html'].includes(p) ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
     }
     document.body.appendChild(nav);
   },
@@ -327,6 +326,7 @@ window.Topbar = {
     if (myActiveId) {
       links.push(
         { href: 'class.html', label: '📅 班级事务', page: 'class.html' }, { href: 'forum.html', label: '💬 班级论坛', page: 'forum.html' },
+        { href: 'chat.html', label: '🗣️ 年级交流', page: 'chat.html' }, /* 👈 新增 */
         { href: 'activities.html', label: '📊 活动统计', page: 'activities.html' }, { href: 'files.html', label: '📁 班级文件', page: 'files.html' },
         { href: 'homework.html', label: '📦 作业收集', page: 'homework.html' }, { href: 'photos.html', label: '📸 班级相册', page: 'photos.html' },
         { href: 'personal.html', label: '📝 个人管理', page: 'personal.html' }, { href: 'finances.html', label: '💰 班费账本', page: 'finances.html' },
@@ -390,24 +390,27 @@ window.Topbar = {
   }
 };
 
-
-
-
-
 // ==========================================
-// 👇 追加：检测清华合并登录，并强制提示修改密码
+// 👇 追加：全局在线状态心跳机制
 // ==========================================
-window.addEventListener('user-ready', () => {
-  if (localStorage.getItem('thu_xy_merged_account') === '1') {
-    localStorage.removeItem('thu_xy_merged_account'); // 弹过一次就删掉
-    
-    setTimeout(() => {
-      const userWantsToChange = confirm(
-        "🔐 账号安全提示：\n\n系统检测到您刚刚使用了『清华快捷登录』。\n为了防止账号丢失，并允许您以后使用账号密码登录，强烈建议您现在前往『个人中心』设置一个专属密码。\n\n点击『确定』现在去修改，点击『取消』稍后再说。"
-      );
-      if (userWantsToChange) {
-        window.location.href = 'profile.html';
-      }
-    }, 1500); // 延迟1.5秒弹出，避免挡住页面加载
-  }
-});
+(function initOnlineHeartbeat() {
+  let heartbeatInterval = null;
+
+  window.addEventListener('user-ready', (e) => {
+    const user = e.detail;
+    if (!user || !user.id) return;
+
+    const db = window.supabaseClient;
+    if (!db) return;
+
+    async function updateLastSeen() {
+      try {
+        await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', user.id);
+      } catch (err) {}
+    }
+
+    updateLastSeen();
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    heartbeatInterval = setInterval(updateLastSeen, 60000);
+  });
+})();
