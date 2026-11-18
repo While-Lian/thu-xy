@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- PWA 配置 -->
+  <link rel="manifest" href="/thu-xy/manifest.json">
+  <meta name="theme-color" content="#660874">
+  <link rel="apple-touch-icon" href="/thu-xy/icon-192.png">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎁 幸运抽奖</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="topbar" class="topbar"></div>
+
+  <main class="page-main">
+    <header class="page-header ld-page-header">
+      <div>
+        <h1>🎁 幸运抽奖</h1>
+        <p class="page-desc">设好奖项与中奖概率，转动大转盘 —— 班会、团建、期末犒劳，看看谁是全班的锦鲤</p>
+      </div>
+      <div class="ld-head-right">
+        <span id="ld-mode-badge" class="ld-mode-badge" title="数据保存位置">⏳ 连接中…</span>
+      </div>
+    </header>
+
+    <div id="ld-storage-tip" class="ld-storage-tip" hidden>
+      <span>💡 <b>当前为本机保存模式</b>：奖项与中奖记录只存在这台设备的浏览器里。
+        在 Supabase 执行 <code>sql/lottery.sql</code> 后刷新页面，即可全班云端同步、多设备大屏同看。</span>
+      <button type="button" class="ld-tip-close" id="ld-tip-close" aria-label="收起提示">✕</button>
+    </div>
+
+    <div class="ld-layout">
+      <!-- ===== 左：大转盘 ===== -->
+      <section class="block ld-wheel-block">
+        <div class="ld-wheel-stage">
+          <div class="ld-wheel-halo" aria-hidden="true"></div>
+          <div class="ld-wheel-outer" id="ld-wheel-outer">
+            <canvas id="ld-wheel" class="ld-wheel-canvas" aria-label="抽奖转盘"></canvas>
+            <div class="ld-pointer" aria-hidden="true"></div>
+            <button type="button" class="ld-hub" id="ld-spin-btn" aria-label="开始抽奖">
+              <span class="ld-hub-label" id="ld-hub-label">抽奖</span>
+              <span class="ld-hub-sub" id="ld-hub-sub">LUCKY</span>
+            </button>
+            <div class="ld-wheel-empty" id="ld-wheel-empty" hidden>先在右侧添加奖项 →</div>
+          </div>
+        </div>
+
+        <div class="ld-wheel-foot">
+          <button type="button" id="ld-draw-btn" class="btn btn-primary ld-draw-btn">开始抽奖</button>
+          <button type="button" id="ld-fullscreen-btn" class="btn btn-ghost btn-small" title="全屏投影，适合班会大屏">⛶ 全屏</button>
+        </div>
+        <p class="ld-pool-info" id="ld-pool-info">正在读取名单…</p>
+      </section>
+
+      <!-- ===== 右：设置面板 ===== -->
+      <section class="block ld-side">
+        <div class="ld-tabs" role="tablist">
+          <button type="button" class="ld-tab active" data-pane="prizes" role="tab">🎁 奖项</button>
+          <button type="button" class="ld-tab" data-pane="people" role="tab">👥 对象</button>
+          <button type="button" class="ld-tab" data-pane="records" role="tab">🏆 记录</button>
+        </div>
+
+        <!-- 奖项设置 -->
+        <div class="ld-pane" id="ld-pane-prizes">
+          <div class="ld-prize-head">
+            <span></span><span>奖项</span><span>概率 %</span><span>剩余</span><span></span>
+          </div>
+          <div id="ld-prize-list" class="ld-prize-list"></div>
+
+          <div class="ld-prize-actions">
+            <button type="button" id="ld-add-prize" class="btn btn-ghost btn-small">＋ 添加奖项</button>
+            <button type="button" id="ld-even-btn" class="btn btn-ghost btn-small">平均分配概率</button>
+            <button type="button" id="ld-stock-btn" class="btn btn-ghost btn-small" title="按每个奖项的剩余份数占比分配中奖概率，例如一等奖 1 份、二等奖 9 份 → 10% / 90%">按份数分配</button>
+          </div>
+
+          <div class="ld-total" id="ld-total">
+            <span class="ld-total-label">概率合计</span>
+            <strong id="ld-total-pct">0%</strong>
+            <span id="ld-total-hint" class="ld-hint"></span>
+          </div>
+
+          <div class="ld-save-row">
+            <button type="button" id="ld-save-btn" class="btn btn-primary btn-small">保存设置</button>
+            <span id="ld-save-msg" class="form-msg"></span>
+          </div>
+          <p class="ld-hint ld-admin-tip" id="ld-admin-tip">班委 / 老师可以修改奖项；全班同学都能转盘抽奖。</p>
+        </div>
+
+        <!-- 抽奖对象 -->
+        <div class="ld-pane" id="ld-pane-people" hidden>
+          <div class="ld-people-mode">
+            <label class="ld-radio"><input type="radio" name="ld-mode" value="members" checked><span>全班同学<em>自动读取本班成员，随机选人</em></span></label>
+            <label class="ld-radio"><input type="radio" name="ld-mode" value="custom"><span>自定义名单<em>手动填参与者，适合外班/嘉宾</em></span></label>
+            <label class="ld-radio"><input type="radio" name="ld-mode" value="none"><span>只抽奖项<em>不指定中奖人，纯转运盘</em></span></label>
+          </div>
+
+          <textarea id="ld-custom-names" class="ld-custom-names" rows="6" spellcheck="false"
+            placeholder="每行一个名字，也可以用逗号、顿号分隔&#10;例如：张三&#10;李四"></textarea>
+
+          <label class="ld-check"><input type="checkbox" id="ld-unique-winner" checked><span>每人限中一次（本轮）</span></label>
+
+          <div class="ld-pool-box">
+            <div id="ld-pool-detail" class="ld-pool-detail">—</div>
+            <button type="button" id="ld-reset-round" class="btn btn-ghost btn-small">重置本轮中奖状态</button>
+          </div>
+          <p class="ld-hint">「重置」只清空本轮的已中奖标记，中奖记录会完整保留。</p>
+        </div>
+
+        <!-- 中奖记录 -->
+        <div class="ld-pane" id="ld-pane-records" hidden>
+          <div id="ld-record-list" class="ld-record-list"></div>
+          <div class="ld-record-actions">
+            <button type="button" id="ld-export-btn" class="btn btn-ghost btn-small">导出 CSV</button>
+            <button type="button" id="ld-clear-btn" class="btn btn-danger btn-small">清空记录</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>THU-XY · 幸运抽奖</p>
+  </footer>
+
+  <!-- ===== 中奖结果 ===== -->
+  <div id="ld-result" class="ld-result" hidden>
+    <div class="ld-result-card" role="dialog" aria-modal="true" aria-labelledby="ld-result-prize">
+      <div class="ld-result-badge">🎉 恭 喜</div>
+      <div class="ld-result-winner" id="ld-result-winner">张三</div>
+      <div class="ld-result-line" id="ld-result-line">获得了</div>
+      <div class="ld-result-prize" id="ld-result-prize">一等奖</div>
+      <div class="ld-result-meta" id="ld-result-meta"></div>
+      <div class="ld-result-actions">
+        <button type="button" id="ld-again-btn" class="btn btn-primary">再来一次</button>
+        <button type="button" id="ld-result-close" class="btn btn-ghost">收下好运</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="ld-confetti" class="ld-confetti" hidden></canvas>
+  <div id="ld-live" class="ld-sr-only" aria-live="polite"></div>
+  <div id="ld-toast" class="ld-toast" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/lucky-draw.js"></script>
+</body>
+</html>
