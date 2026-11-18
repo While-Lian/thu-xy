@@ -114,7 +114,7 @@ window.Topbar = {
       { href: 'personal.html',   label: '个人管理', page: 'personal.html' }
     ];
 
-    const toolPages = ['photos.html', 'homework.html', 'finances.html', 'feedback.html', 'files.html'];
+    const toolPages = ['photos.html', 'homework.html', 'finances.html', 'feedback.html', 'files.html', 'lottery.html', 'lucky-draw.html'];
     const isToolPage = toolPages.includes(currentPage);
 
     let pendingCount = 0, managedClasses = [];
@@ -155,18 +155,24 @@ window.Topbar = {
       `;
     }
 
+    const toolLink = (href, label, tag) => `<a href="${href}"${currentPage === href ? ' class="is-current"' : ''}>${label}${tag ? ` <span class="tools-tag">${tag}</span>` : ''}</a>`;
+
     const toolsMenuHtml = `
       <div class="topbar-manage" id="topbar-tools" style="margin-right: 4px;">
         <button class="topbar-link topbar-tools-btn${isToolPage ? ' active' : ''}" type="button">
           🎒 班级工具 <span class="topbar-caret">▾</span>
         </button>
-        <div class="topbar-dropdown topbar-manage-dropdown" id="topbar-tools-dropdown">
-          <a href="files.html">📁 班级文件</a>
-          <a href="lottery.html">🎲 随机抽签</a>
-          <a href="homework.html">📦 作业收集</a>
-          <a href="finances.html">💰 班费账本</a>
-          <a href="feedback.html">📫 意见箱</a>
-          <a href="photos.html">📸 班级相册</a>
+        <div class="topbar-dropdown topbar-manage-dropdown topbar-tools-dropdown" id="topbar-tools-dropdown">
+          <div class="tools-group-title">🎉 班会互动</div>
+          ${toolLink('lottery.html', '🎲 随机抽签')}
+          ${toolLink('lucky-draw.html', '🎁 幸运抽奖', 'NEW')}
+          <div class="tools-group-title">🧰 事务工具</div>
+          ${toolLink('homework.html', '📦 作业收集')}
+          ${toolLink('finances.html', '💰 班费账本')}
+          ${toolLink('feedback.html', '📫 意见箱')}
+          <div class="tools-group-title">📚 资料库</div>
+          ${toolLink('files.html', '📁 班级文件')}
+          ${toolLink('photos.html', '📸 班级相册')}
         </div>
       </div>
     `;
@@ -312,7 +318,7 @@ window.Topbar = {
     if (!myActiveId) {
       nav.innerHTML = `<a href="classes.html" class="mbn-item${p === 'classes.html' ? ' active' : ''}"><span class="mbn-icon">🏫</span><span class="mbn-label">广场</span></a><a href="profile.html" class="mbn-item${p === 'profile.html' ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
     } else {
-      nav.innerHTML = `<a href="class.html" class="mbn-item${p === 'class.html' ? ' active' : ''}"><span class="mbn-icon">📅</span><span class="mbn-label">事务</span></a><a href="forum.html" class="mbn-item${p === 'forum.html' ? ' active' : ''}"><span class="mbn-icon">💬</span><span class="mbn-label">论坛</span></a><a href="chat.html" class="mbn-item${p === 'chat.html' ? ' active' : ''}"><span class="mbn-icon">🗣️</span><span class="mbn-label">交流</span></a><a href="profile.html" class="mbn-item${['profile.html', 'personal.html', 'files.html', 'photos.html', 'admin.html', 'requests.html', 'stats.html', 'finances.html', 'feedback.html', 'homework.html'].includes(p) ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
+      nav.innerHTML = `<a href="class.html" class="mbn-item${p === 'class.html' ? ' active' : ''}"><span class="mbn-icon">📅</span><span class="mbn-label">事务</span></a><a href="forum.html" class="mbn-item${p === 'forum.html' ? ' active' : ''}"><span class="mbn-icon">💬</span><span class="mbn-label">论坛</span></a><a href="chat.html" class="mbn-item${p === 'chat.html' ? ' active' : ''}"><span class="mbn-icon">🗣️</span><span class="mbn-label">交流</span></a><a href="profile.html" class="mbn-item${['profile.html', 'personal.html', 'files.html', 'photos.html', 'admin.html', 'requests.html', 'stats.html', 'finances.html', 'feedback.html', 'homework.html', 'lottery.html', 'lucky-draw.html'].includes(p) ? ' active' : ''}"><span class="mbn-icon">👤</span><span class="mbn-label">我的</span></a>`;
     }
     document.body.appendChild(nav);
   },
@@ -327,7 +333,10 @@ window.Topbar = {
       links.push(
         { href: 'class.html', label: '📅 班级事务', page: 'class.html' }, { href: 'forum.html', label: '💬 班级论坛', page: 'forum.html' },
         { href: 'chat.html', label: '🗣️ 年级交流', page: 'chat.html' }, /* 👈 新增 */
-        { href: 'activities.html', label: '📊 活动统计', page: 'activities.html' }, { href: 'files.html', label: '📁 班级文件', page: 'files.html' },
+        { href: 'activities.html', label: '📊 活动统计', page: 'activities.html' },
+        { href: 'lottery.html', label: '🎲 随机抽签', page: 'lottery.html' },
+        { href: 'lucky-draw.html', label: '🎁 幸运抽奖', page: 'lucky-draw.html' },
+        { href: 'files.html', label: '📁 班级文件', page: 'files.html' },
         { href: 'homework.html', label: '📦 作业收集', page: 'homework.html' }, { href: 'photos.html', label: '📸 班级相册', page: 'photos.html' },
         { href: 'personal.html', label: '📝 个人管理', page: 'personal.html' }, { href: 'finances.html', label: '💰 班费账本', page: 'finances.html' },
         { href: 'feedback.html', label: '📫 匿名意见箱', page: 'feedback.html' }, { href: 'profile.html', label: '👤 个人中心', page: 'profile.html' },
